@@ -1,9 +1,9 @@
-/* --- DESIGN SYSTEM SYSTEM (SWISS SAAS CLEAN) --- */
+/* --- DESIGN SYSTEM SYSTEM (SLEEK THEATRICAL CLEAN) --- */
 :root {
   /* Common System Geometry & Speeds */
   --radius-card: 16px;
-  --radius-input: 10px;
-  --radius-btn: 10px;
+  --radius-input: 12px;
+  --radius-btn: 12px;
   
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-title: 'Outfit', sans-serif;
@@ -16,49 +16,49 @@
                       box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* --- THEME 1: DARK MODE (SLEEK OBSIDIAN & ICE BLUE) --- */
+/* --- THEME 1: DARK MODE (SLEEK OBSIDIAN & HISOKA PALETTE) --- */
 body[data-theme="dark"] {
-  --bg-primary: hsl(222, 20%, 8%);         /* Deep Obsidian Grey */
-  --bg-secondary: hsl(222, 16%, 13%);       /* Soft Graphite Card */
-  --bg-tertiary: hsl(222, 15%, 5%);         /* Deep Input Base */
-  --border-color: hsl(222, 12%, 18%);       /* Thin Slate Outline */
-  --border-hover: hsl(222, 10%, 26%);       /* Highlight on hover */
+  --bg-primary: #0b0e14;              /* Deep Slate Black */
+  --bg-secondary: #131824;            /* Slate Dark Card */
+  --bg-tertiary: #1b2234;             /* Input Base */
+  --border-color: #2b354e;            /* Thin Border Slate */
+  --border-hover: #6857A2;            /* Indigo Hisoka Accent on Hover */
   
-  --text-primary: hsl(0, 0%, 100%);         /* Pure White */
-  --text-secondary: hsl(222, 8%, 75%);      /* Soft Ice Grey */
-  --text-muted: hsl(222, 8%, 50%);          /* Medium Muted Grey */
+  --text-primary: #EEE4E8;            /* Pale Off-White/Pink */
+  --text-secondary: #E2E2EF;          /* Pale Lavender */
+  --text-muted: #EB9FBC;              /* Light Rose Pink */
   
-  --accent: hsl(195, 100%, 65%);             /* Ice Blue */
-  --accent-hover: hsl(195, 100%, 55%);
-  --accent-light: hsla(195, 100%, 65%, 0.1);
+  --accent: #DA5C94;                  /* Star Pinkish Rose */
+  --accent-hover: #EB385A;            /* Crimson Red */
+  --accent-light: rgba(218, 92, 148, 0.12); /* Light Pink Star Glow */
   
-  --success: hsl(145, 80%, 48%);
-  --error: hsl(355, 85%, 58%);
+  --success: #94C4BB;                 /* Tear Sage Green */
+  --error: #EB385A;                   /* Crimson Red */
   
-  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 50px -25px rgba(104, 87, 162, 0.15);
   --shadow-input: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* --- THEME 2: LIGHT MODE (STUDIO WHITE & SLATE) --- */
+/* --- THEME 2: LIGHT MODE (TITANIUM & HISOKA SOFT PALETTE) --- */
 body[data-theme="light"] {
-  --bg-primary: hsl(210, 20%, 98%);         /* Titanium Off-White */
-  --bg-secondary: hsl(0, 0%, 100%);         /* Pure White Card */
-  --bg-tertiary: hsl(210, 20%, 94%);         /* Soft Grey Input */
-  --border-color: hsl(210, 15%, 88%);       /* Thin Light Grey Outline */
-  --border-hover: hsl(210, 12%, 78%);
+  --bg-primary: #f5f6f8;              /* Titanium Off-White */
+  --bg-secondary: #ffffff;            /* Pure White Card */
+  --bg-tertiary: #edf0f4;             /* Light Slate Grey Input */
+  --border-color: #e2e5ec;            /* Thin Light Border */
+  --border-hover: #6857A2;            /* Indigo Hisoka Accent on Hover */
   
-  --text-primary: hsl(222, 24%, 12%);       /* Dark Slate Blue */
-  --text-secondary: hsl(222, 12%, 36%);      /* Medium Slate Grey */
-  --text-muted: hsl(222, 12%, 56%);          /* Light Charcoal Grey */
+  --text-primary: #214974;            /* Dark Blue Text */
+  --text-secondary: #6857A2;          /* Purple Indigo text */
+  --text-muted: #94C4BB;              /* Sage Green text */
   
-  --accent: hsl(210, 100%, 50%);             /* Cobalt Blue */
-  --accent-hover: hsl(210, 100%, 42%);
-  --accent-light: hsla(210, 100%, 50%, 0.08);
+  --accent: #DA5C94;                  /* Star Pinkish Rose */
+  --accent-hover: #EB385A;            /* Crimson Red */
+  --accent-light: rgba(218, 92, 148, 0.08);
   
-  --success: hsl(145, 75%, 38%);
-  --error: hsl(355, 80%, 50%);
+  --success: #94C4BB;                 /* Tear Sage Green */
+  --error: #EB385A;                   /* Crimson Red */
   
-  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --shadow-card: 0 20px 40px -15px rgba(104, 87, 162, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
   --shadow-input: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
@@ -734,4 +734,5 @@ body[data-theme="dark"] .results-table tr:hover {
   font-size: 0.75rem;
   font-weight: 600;
   border: 1px solid var(--border-color);
-  transition: var(--theme-tran                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+  transition: var(--theme-transition);
+}

@@ -1,13 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  WordPressCredentials, 
-  Article, 
-  Category, 
-  testConnection, 
-  schedulePost 
+import {
+  WordPressCredentials,
+  Article,
+  Category,
+  WPMedia,
+  testConnection,
+  schedulePost,
+  fetchMediaLibrary
 } from './services/wordpress';
 
 // --- INLINE SVG COMPONENTS ---
+const IconHisokaLogo = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px', color: 'var(--accent)' }}>
+    <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.857 1.4-8.168L.132 9.21l8.2-1.192z" />
+  </svg>
+);
+
+const IconSpade = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--border-hover)' }}>
+    <path d="M12 2C11.5 2 6 9 6 13.5a6 6 0 0 0 12 0C18 9 12.5 2 12 2Z" />
+    <path d="M9.5 22h5l-1-3.5h-3L9.5 22Z" />
+  </svg>
+);
+
+const IconHeart = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--error)' }}>
+    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+  </svg>
+);
+
+const IconDiamond = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--text-muted)' }}>
+    <path d="M12 2L3 12l9 10 9-10L12 2z" />
+  </svg>
+);
+
+const IconClub = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--success)' }}>
+    <path d="M12 9.5a3.5 3.5 0 1 0-3.5 3.5c.23 0 .46-.02.68-.07A4.5 4.5 0 0 0 8 16.5a4.5 4.5 0 1 0 7.32-3.5 3.5 3.5 0 0 0-.64-3.5H12Z" />
+    <path d="M9.5 22h5l-1-3.5h-3L9.5 22Z" />
+  </svg>
+);
+
 const IconGlobe = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
 );
@@ -56,31 +90,44 @@ const IconFolder = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
 );
 
-const IconTerminal = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-);
-
 const IconLink = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
 );
 
-const IconRocket = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.25-2.5 3.5-2.5 3.5s2.25-1 3.5-2.5M12 2C6 2 2 6 2 12c0 2.5 1 4.5 2.5 6l11.5-11.5C14.5 5 12.5 4 12 2Z"/><path d="M20 4s-4 1-7 4l8 8c3-3 4-7 4-7s-1-4-5-5Z"/></svg>
-);
-
-// Ícone do Sol (Para alternar para o Modo Claro)
 const IconSun = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg>
 );
 
-// Ícone da Lua (Para alternar para o Modo Escuro)
 const IconMoon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
 );
 
-// Ícone de Camadas (Importação em Massa)
-const IconLayers = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+const IconImage = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+);
+
+const IconSearch = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+);
+
+const IconX = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+);
+
+const IconChevronLeft = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+);
+
+const IconChevronRight = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+);
+
+const IconTerminal = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+);
+
+const IconRocket = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.25-2.5 3.5-2.5 3.5s2.25-1 3.5-2.5M12 2C6 2 2 6 2 12c0 2.5 1 4.5 2.5 6l11.5-11.5C14.5 5 12.5 4 12 2Z"/><path d="M20 4s-4 1-7 4l8 8c3-3 4-7 4-7s-1-4-5-5Z"/></svg>
 );
 
 interface LogMessage {
@@ -127,6 +174,18 @@ export default function App() {
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const [results, setResults] = useState<ArticleResult[]>([]);
 
+  // --- MEDIA PICKER ---
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<'article' | 'bulk'>('article');
+  const [mediaItems, setMediaItems] = useState<WPMedia[]>([]);
+  const [mediaPage, setMediaPage] = useState(1);
+  const [mediaTotalPages, setMediaTotalPages] = useState(1);
+  const [mediaSearch, setMediaSearch] = useState('');
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaError, setMediaError] = useState('');
+  // Imagem destacada para geração em massa
+  const [bulkFeaturedMedia, setBulkFeaturedMedia] = useState<WPMedia | null>(null);
+
   // --- IMPORTAÇÃO EM MASSA ---
   const [bulkDay, setBulkDay] = useState<string>('');
   const [bulkTimes, setBulkTimes] = useState<string>('');
@@ -172,9 +231,58 @@ export default function App() {
       metaDescription: '',
       scheduleDate: '',
       categoryId: '',
-      tagsString: ''
+      tagsString: '',
+      featuredMediaId: undefined
     };
   }
+
+  // Abre o media picker e carrega a primeira página
+  const openMediaPicker = async (target: 'article' | 'bulk') => {
+    if (connectionState !== 'success') {
+      alert('Conecte ao WordPress primeiro para acessar a biblioteca de mídia.');
+      return;
+    }
+    setMediaPickerTarget(target);
+    setMediaSearch('');
+    setMediaPage(1);
+    setMediaItems([]);
+    setMediaError('');
+    setMediaPickerOpen(true);
+    await loadMedia(1, '');
+  };
+
+  const loadMedia = async (page: number, search: string) => {
+    setMediaLoading(true);
+    setMediaError('');
+    try {
+      const result = await fetchMediaLibrary(credentials, page, search);
+      setMediaItems(result.items);
+      setMediaTotalPages(result.totalPages);
+      setMediaPage(page);
+    } catch (e: any) {
+      setMediaError(e.message || 'Erro ao carregar mídia.');
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
+  const handleMediaSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadMedia(1, mediaSearch);
+  };
+
+  const handleSelectMedia = (media: WPMedia) => {
+    if (mediaPickerTarget === 'bulk') {
+      setBulkFeaturedMedia(media);
+    } else {
+      updateArticle(activeArticle.id, { featuredMediaId: media.id });
+    }
+    setMediaPickerOpen(false);
+  };
+
+  const handleRemoveFeaturedImage = (articleId: number) => {
+    updateArticle(articleId, { featuredMediaId: undefined });
+  };
 
   // Adiciona logs com timestamp local
   function addLog(text: string, type: 'info' | 'success' | 'error') {
@@ -298,7 +406,8 @@ export default function App() {
         metaDescription: '',
         scheduleDate: `${bulkDay}T${time}`,
         categoryId: '',
-        tagsString: ''
+        tagsString: '',
+        featuredMediaId: bulkFeaturedMedia?.id
       };
     });
 
@@ -374,13 +483,159 @@ export default function App() {
 
   const activeArticle = articles.find(a => a.id === activeTabId) || articles[0];
 
+
   return (
     <div className="dashboard-container">
+      {/* MODAL: SELEÇÃO DE IMAGEM DESTACADA */}
+      {mediaPickerOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            width: '100%', maxWidth: '860px',
+            maxHeight: '90vh',
+            display: 'flex', flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            {/* Header do modal */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '1rem 1.25rem',
+              borderBottom: '1px solid var(--border-color)'
+            }}>
+              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <IconImage /> Biblioteca de Mídia — Selecionar Imagem Destacada
+              </span>
+              <button type="button" onClick={() => setMediaPickerOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}>
+                <IconX />
+              </button>
+            </div>
+
+            {/* Barra de busca */}
+            <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--border-color)' }}>
+              <form onSubmit={handleMediaSearch} style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  placeholder="Buscar imagem por nome..."
+                  value={mediaSearch}
+                  onChange={e => setMediaSearch(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <button type="submit" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.5rem 0.9rem' }}>
+                  <IconSearch /> Buscar
+                </button>
+              </form>
+            </div>
+
+            {/* Grid de imagens */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1.25rem' }}>
+              {mediaLoading && (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                  Carregando imagens...
+                </div>
+              )}
+              {mediaError && (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--error)' }}>
+                  {mediaError}
+                </div>
+              )}
+              {!mediaLoading && !mediaError && mediaItems.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                  Nenhuma imagem encontrada.
+                </div>
+              )}
+              {!mediaLoading && mediaItems.length > 0 && (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                  gap: '0.75rem'
+                }}>
+                  {mediaItems.map(item => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleSelectMedia(item)}
+                      style={{
+                        background: 'var(--bg-primary)',
+                        border: '2px solid var(--border-color)',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        overflow: 'hidden',
+                        padding: 0,
+                        textAlign: 'left',
+                        transition: 'border-color 0.15s'
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-color)')}
+                      title={item.title}
+                    >
+                      <img
+                        src={item.thumbnail}
+                        alt={item.alt || item.title}
+                        style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }}
+                        loading="lazy"
+                      />
+                      <span style={{
+                        display: 'block',
+                        padding: '0.35rem 0.5rem',
+                        fontSize: '0.65rem',
+                        color: 'var(--text-muted)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {item.title}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Paginação */}
+            {mediaTotalPages > 1 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
+                padding: '0.75rem', borderTop: '1px solid var(--border-color)'
+              }}>
+                <button type="button" className="btn btn-secondary"
+                  disabled={mediaPage <= 1 || mediaLoading}
+                  onClick={() => loadMedia(mediaPage - 1, mediaSearch)}
+                  style={{ padding: '0.4rem 0.6rem', display: 'flex', alignItems: 'center' }}
+                >
+                  <IconChevronLeft />
+                </button>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  Página {mediaPage} de {mediaTotalPages}
+                </span>
+                <button type="button" className="btn btn-secondary"
+                  disabled={mediaPage >= mediaTotalPages || mediaLoading}
+                  onClick={() => loadMedia(mediaPage + 1, mediaSearch)}
+                  style={{ padding: '0.4rem 0.6rem', display: 'flex', alignItems: 'center' }}
+                >
+                  <IconChevronRight />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* CABEÇALHO TÉCNICO CLEAN COM SUITE LIGHT/DARK */}
       <header className="dashboard-header">
-        <div>
-          <h1>WP BULK SCHEDULER</h1>
-          <p>Plataforma Clean de Distribuição de Conteúdo e Yoast SEO</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <IconHisokaLogo />
+          <div>
+            <h1 style={{ letterSpacing: '1px' }}>HISOKA PUSH</h1>
+            <p>Distribuição Mágica de Conteúdo em Massa para WordPress</p>
+          </div>
         </div>
         <div className="header-actions">
           <button 
@@ -398,7 +653,7 @@ export default function App() {
         {/* COLUNA ESQUERDA: CONFIGURAÇÃO DE ACESSO */}
         <aside className="glass-card">
           <h2 className="section-title">
-            <IconKey /> CONEXÃO
+            <IconSpade /> CONEXÃO
           </h2>
           
           <div className="form-group">
@@ -536,8 +791,8 @@ export default function App() {
             {/* IMPORTAÇÃO EM MASSA */}
             <section className="bulk-import-panel">
               <div className="bulk-import-header">
-                <h2 className="section-title" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: '0.25rem' }}>
-                  <IconLayers /> IMPORTAÇÃO EM MASSA
+                <h2 className="section-title" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <IconClub /> IMPORTAÇÃO EM MASSA
                 </h2>
                 <p className="helper-text" style={{ color: 'var(--text-secondary)' }}>
                   Cole um dia, vários horários (um por linha) e vários títulos (um por linha). O sistema gera todos os artigos pareando título com horário na ordem.
@@ -591,6 +846,44 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Imagem destacada em massa */}
+              <div className="form-group" style={{ marginTop: '0.75rem' }}>
+                <label><IconImage /> Imagem Destacada (todos os artigos)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  {bulkFeaturedMedia ? (
+                    <>
+                      <img
+                        src={bulkFeaturedMedia.thumbnail}
+                        alt={bulkFeaturedMedia.alt || bulkFeaturedMedia.title}
+                        style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '2px solid var(--accent)' }}
+                      />
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', flex: 1 }}>
+                        {bulkFeaturedMedia.title} <span style={{ color: 'var(--text-muted)' }}>(ID: {bulkFeaturedMedia.id})</span>
+                      </span>
+                      <button type="button" className="btn btn-secondary" onClick={() => setBulkFeaturedMedia(null)}
+                        style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}>
+                        Remover
+                      </button>
+                      <button type="button" className="btn btn-secondary" onClick={() => openMediaPicker('bulk')}
+                        style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}>
+                        Trocar
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" className="btn btn-secondary" onClick={() => openMediaPicker('bulk')}
+                      disabled={isProcessing || connectionState !== 'success'}
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <IconImage /> Selecionar do Banco de Mídia
+                    </button>
+                  )}
+                </div>
+                {connectionState !== 'success' && (
+                  <p className="helper-text" style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    Conecte ao WordPress para acessar a biblioteca de mídia.
+                  </p>
+                )}
+              </div>
+
               <div className="bulk-import-footer">
                 <span className="helper-text">
                   {parsedBulkTitles.length > 0 && parsedBulkTimes.length > 0 && bulkDay
@@ -608,7 +901,7 @@ export default function App() {
                     parsedBulkTitles.length === 0
                   }
                 >
-                  <IconLayers /> Gerar Artigos em Massa
+                  <IconClub /> Gerar Artigos em Massa
                 </button>
               </div>
             </section>
@@ -622,9 +915,12 @@ export default function App() {
                 textTransform: 'uppercase', 
                 marginBottom: '0.5rem', 
                 letterSpacing: '0.5px',
-                fontWeight: 700
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem'
               }}>
-                Artigos do Lote
+                <IconHeart /> Artigos do Lote
               </h3>
               
               {articles.map((art, idx) => {
@@ -764,6 +1060,54 @@ export default function App() {
                 </div>
               </div>
 
+              {/* IMAGEM DESTACADA */}
+              <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                <label><IconImage /> Imagem Destacada</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  {activeArticle.featuredMediaId ? (
+                    <>
+                      <div style={{
+                        width: '64px', height: '64px', borderRadius: '6px',
+                        border: '2px solid var(--accent)',
+                        background: 'var(--bg-primary)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--accent)', textAlign: 'center', padding: '0.25rem' }}>
+                          ID: {activeArticle.featuredMediaId}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', flex: 1 }}>
+                        Imagem selecionada (ID: {activeArticle.featuredMediaId})
+                      </span>
+                      <button type="button" className="btn btn-secondary"
+                        onClick={() => handleRemoveFeaturedImage(activeArticle.id)}
+                        style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}>
+                        Remover
+                      </button>
+                      <button type="button" className="btn btn-secondary"
+                        onClick={() => openMediaPicker('article')}
+                        disabled={isProcessing || connectionState !== 'success'}
+                        style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}>
+                        Trocar
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" className="btn btn-secondary"
+                      onClick={() => openMediaPicker('article')}
+                      disabled={isProcessing || connectionState !== 'success'}
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <IconImage /> Selecionar do Banco de Mídia
+                    </button>
+                  )}
+                </div>
+                {connectionState !== 'success' && (
+                  <p className="helper-text" style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    Conecte ao WordPress para acessar a biblioteca de mídia.
+                  </p>
+                )}
+              </div>
+
               {/* METADADOS DO YOAST SEO */}
               <div className="form-group" style={{ 
                 borderTop: '1px dashed var(--border-color)', 
@@ -775,9 +1119,12 @@ export default function App() {
                   fontSize: '0.95rem', 
                   color: 'var(--text-primary)', 
                   marginBottom: '1rem', 
-                  fontWeight: 700
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
                 }}>
-                  Otimização de SEO (Yoast SEO)
+                  <IconDiamond /> Otimização de SEO (Yoast SEO)
                 </h4>
                 
                 <div className="form-group row-2">
@@ -950,4 +1297,3 @@ export default function App() {
     </div>
   );
 }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
