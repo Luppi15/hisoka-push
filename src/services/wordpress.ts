@@ -203,6 +203,28 @@ async function findOrCreateTag(siteUrl: string, authHeader: string, tagName: str
  */
 export type PublishMode = 'future' | 'draft';
 
+/**
+ * Converte 'YYYY-MM-DDTHH:MM' (hora local do browser) para UTC ISO 8601.
+ * Envia como date_gmt que o WordPress aceita sem ambiguidade de timezone.
+ */
+function toUtcIso(dateStr: string): string {
+  const date = new Date(`${dateStr}:00`);
+  return date.toISOString(); // Sempre UTC, ex: 2026-06-01T13:00:00.000Z
+}
+
+/**
+ * Garante que o conteúdo chegue ao Gutenberg já em formato de blocos.
+ * Evita o prompt "Converter em blocos" ao abrir o editor.
+ */
+function wrapInGutenbergBlocks(html: string): string {
+  const trimmed = html.trim();
+  if (!trimmed) return '';
+  // Se já tem marcadores de bloco, não re-embrulha
+  if (trimmed.includes('<!-- wp:')) return trimmed;
+  // Embrulha em bloco Classic (freeform) — preserva HTML sem conversão
+  return `<!-- wp:freeform -->\n${trimmed}\n<!-- /wp:freeform -->`;
+}
+
 export async function schedulePost(
   credentials: WordPressCredentials,
   article: Article,
@@ -231,13 +253,13 @@ export async function schedulePost(
   onLog(`[${article.title}] Enviando artigo para o WordPress...`, 'info');
 
   // 2. Preparar payload
-  // WordPress requer a data no formato ISO8601 local YYYY-MM-DDTHH:MM:SS
-  const localIsoDate = article.scheduleDate ? `${article.scheduleDate}:00` : undefined;
+  // WordPress requer a data em UTC via date_gmt para evitar dupla conversão de timezone
+  const utcIsoDate = article.scheduleDate ? toUtcIso(article.scheduleDate) : undefined;
 
   const payload: any = {
     title: article.title.trim(),
-    content: article.content.trim(),
-    status: publishMode, // 'future' = agendado | 'draft' = rascunho (com data definida)
+    content: wrapInGutenbergBlocks(article.content.trim()),
+    status: publishMode, // 'future' = agendado | 'draft' = rascunho
     slug: article.slug.trim(),
     categories: article.categoryId ? [Number(article.categoryId)] : [],
     tags: tagIds,
@@ -247,8 +269,8 @@ export async function schedulePost(
     }
   };
 
-  if (localIsoDate) {
-    payload.date = localIsoDate;
+  if (utcIsoDate) {
+    payload.date_gmt = utcIsoDate;
   }
 
   if (article.featuredMediaId && article.featuredMediaId > 0) {

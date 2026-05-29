@@ -169,7 +169,7 @@ export default function App() {
   const [activeTabId, setActiveTabId] = useState<number>(1);
 
   // --- CONTROLE DE EXECUÇÃO EM LOTE ---
-  const [publishMode, setPublishMode] = useState<'future' | 'draft'>('draft');
+  const [publishMode, setPublishMode] = useState<'future' | 'draft'>('future');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<LogMessage[]>([]);
