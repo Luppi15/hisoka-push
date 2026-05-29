@@ -201,10 +201,13 @@ async function findOrCreateTag(siteUrl: string, authHeader: string, tagName: str
 /**
  * Agenda um artigo no WordPress retornando o link de edição do post criado.
  */
+export type PublishMode = 'future' | 'draft';
+
 export async function schedulePost(
   credentials: WordPressCredentials,
   article: Article,
-  onLog: (text: string, type: 'info' | 'success' | 'error') => void
+  onLog: (text: string, type: 'info' | 'success' | 'error') => void,
+  publishMode: PublishMode = 'future'
 ): Promise<string> {
   const siteUrl = normalizeUrl(credentials.siteUrl);
   const authHeader = getAuthHeader(credentials.username, credentials.appPassword);
@@ -234,7 +237,7 @@ export async function schedulePost(
   const payload: any = {
     title: article.title.trim(),
     content: article.content.trim(),
-    status: 'future', // Agendado
+    status: publishMode, // 'future' = agendado | 'draft' = rascunho (com data definida)
     slug: article.slug.trim(),
     categories: article.categoryId ? [Number(article.categoryId)] : [],
     tags: tagIds,
@@ -271,7 +274,8 @@ export async function schedulePost(
   const postId = responseData.id;
   const editUrl = `${siteUrl}/wp-admin/post.php?post=${postId}&action=edit`;
 
-  onLog(`[${article.title}] Agendado com sucesso! ID: ${postId}`, 'success');
+  const successWord = publishMode === 'draft' ? 'Salvo como rascunho' : 'Agendado';
+  onLog(`[${article.title}] ${successWord} com sucesso! ID: ${postId}`, 'success');
 
   return editUrl;
 }

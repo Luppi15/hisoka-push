@@ -169,6 +169,7 @@ export default function App() {
   const [activeTabId, setActiveTabId] = useState<number>(1);
 
   // --- CONTROLE DE EXECUÇÃO EM LOTE ---
+  const [publishMode, setPublishMode] = useState<'future' | 'draft'>('draft');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<LogMessage[]>([]);
@@ -451,13 +452,13 @@ export default function App() {
       addLog(`[Lote ${i + 1}/${filledArticles.length}] Agendando "${article.title}"`, 'info');
       
       try {
-        const editUrl = await schedulePost(credentials, article, addLog);
+        const editUrl = await schedulePost(credentials, article, addLog, publishMode);
         
         currentResults[i] = {
           title: article.title,
           scheduleDate: article.scheduleDate,
           status: 'success',
-          message: 'Post agendado com sucesso!',
+          message: publishMode === 'draft' ? 'Salvo como rascunho!' : 'Post agendado com sucesso!',
           editUrl
         };
       } catch (error: any) {
@@ -1187,6 +1188,31 @@ export default function App() {
               Verifique os posts preenchidos. O sistema agendará cada um na data/hora especificada em fila única ordenada de carregamento.
             </p>
 
+            <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="publishMode"
+                  value="future"
+                  checked={publishMode === 'future'}
+                  onChange={() => setPublishMode('future')}
+                  disabled={isProcessing}
+                />
+                <span>Agendar no WordPress (status "futuro")</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="publishMode"
+                  value="draft"
+                  checked={publishMode === 'draft'}
+                  onChange={() => setPublishMode('draft')}
+                  disabled={isProcessing}
+                />
+                <span>Salvar como rascunho (com data definida)</span>
+              </label>
+            </div>
+
             <button
               type="button"
               className="btn btn-primary"
@@ -1194,7 +1220,9 @@ export default function App() {
               disabled={isProcessing || connectionState !== 'success'}
               style={{ padding: '0.9rem 1.5rem', fontSize: '0.95rem' }}
             >
-              {isProcessing ? 'PUBLICANDO LOTE...' : `EXECUTAR AGENDAMENTO DE ${articles.filter(a => a.title.trim() && a.scheduleDate).length} POST(S)`}
+              {isProcessing
+                ? 'PUBLICANDO LOTE...'
+                : `${publishMode === 'draft' ? 'SALVAR COMO RASCUNHO' : 'EXECUTAR AGENDAMENTO'} DE ${articles.filter(a => a.title.trim() && a.scheduleDate).length} POST(S)`}
             </button>
 
             {/* PROGRESSO */}
