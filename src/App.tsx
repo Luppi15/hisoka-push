@@ -227,6 +227,7 @@ export default function App() {
       id,
       title: '',
       slug: '',
+      excerpt: '',
       content: '',
       focusKeyword: '',
       metaDescription: '',
@@ -402,6 +403,7 @@ export default function App() {
         id: i + 1,
         title,
         slug: generateSlug(title),
+        excerpt: '',
         content: '',
         focusKeyword: '',
         metaDescription: '',
@@ -429,6 +431,31 @@ export default function App() {
       alert('Insira o Título e a Data/Hora em pelo menos um artigo.');
       return;
     }
+
+    // Aviso: posts com data/hora no passado
+    const now = new Date();
+    const pastDates = filledArticles.filter(a => new Date(`${a.scheduleDate}:00`) < now);
+    if (pastDates.length > 0) {
+      const titles = pastDates.map(a => `• ${a.title}`).join('\n');
+      const ok = window.confirm(
+        `⚠️ ${pastDates.length} post(s) com data/hora no passado — serão publicados imediatamente pelo WordPress:\n\n${titles}\n\nContinuar mesmo assim?`
+      );
+      if (!ok) return;
+    }
+
+    // Aviso: posts com conteúdo vazio (prejudica o Discover)
+    const emptyContent = filledArticles.filter(a => !a.content.trim());
+    if (emptyContent.length > 0) {
+      const titles = emptyContent.map(a => `• ${a.title}`).join('\n');
+      const ok = window.confirm(
+        `⚠️ ${emptyContent.length} post(s) com conteúdo vazio — posts sem texto não aparecem no Google Discover:\n\n${titles}\n\nEnviar mesmo assim?`
+      );
+      if (!ok) return;
+    }
+
+    // Confirmação final do lote
+    const confirmed = window.confirm(`Confirmar envio de ${filledArticles.length} post(s) para o WordPress?`);
+    if (!confirmed) return;
 
     setIsProcessing(true);
     setProgress(0);
@@ -1165,6 +1192,20 @@ export default function App() {
               </div>
 
               <div className="form-group">
+                <label htmlFor="excerpt">Resumo / Excerpt <span style={{ color: 'var(--accent)', fontWeight: 400, fontSize: '0.75rem' }}>(Google Discover)</span></label>
+                <textarea
+                  id="excerpt"
+                  rows={2}
+                  placeholder="Resumo curto do artigo — aparece no card do Google Discover e nas listagens do blog. (1-2 frases)"
+                  value={activeArticle.excerpt}
+                  onChange={e => updateArticle(activeArticle.id, { excerpt: e.target.value })}
+                  disabled={isProcessing}
+                  style={{ resize: 'vertical', minHeight: '56px' }}
+                />
+                <p className="helper-text">Sem excerpt, o WordPress gera um resumo automático que pode ser menos relevante para o Discover.</p>
+              </div>
+
+              <div className="form-group">
                 <label htmlFor="content">Conteúdo em HTML</label>
                 <textarea 
                   id="content"
@@ -1212,6 +1253,21 @@ export default function App() {
                 <span>Salvar como rascunho (com data definida)</span>
               </label>
             </div>
+
+            {publishMode === 'draft' && (
+              <div style={{
+                fontSize: '0.82rem',
+                color: 'var(--text-primary)',
+                background: 'var(--bg-primary)',
+                border: '1px dashed var(--border-hover)',
+                borderRadius: '6px',
+                padding: '0.6rem 0.9rem',
+                marginBottom: '1rem',
+                lineHeight: 1.5
+              }}>
+                ⚠️ <strong>Rascunhos não publicam automaticamente</strong> e não aparecem no Google Discover. Use “Agendar” para que o WordPress publique no horário definido.
+              </div>
+            )}
 
             <button
               type="button"

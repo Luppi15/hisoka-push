@@ -8,6 +8,7 @@ export interface Article {
   id: number;
   title: string;
   slug: string;
+  excerpt: string;       // resumo exibido no card do Google Discover
   content: string;
   focusKeyword: string;
   metaDescription: string;
@@ -88,7 +89,8 @@ export async function testConnection(credentials: WordPressCredentials): Promise
     }
 
     const categories = await categoriesRes.json();
-    const tags = await tagsRes.json();
+    // Leitura defensiva — algumas instalações WP desabilitam o endpoint de tags
+    const tags = tagsRes.ok ? await tagsRes.json() : [];
 
     return {
       success: true,
@@ -236,19 +238,15 @@ export async function schedulePost(
 
   onLog(`[${article.title}] Processando tags do artigo...`, 'info');
   
-  // 1. Processar e resolver IDs de Tags
+  // 1. Processar e resolver IDs de Tags em paralelo (mais rápido para lotes)
   const tagNames = article.tagsString
     .split(',')
     .map(t => t.trim())
     .filter(t => t.length > 0);
-  
-  const tagIds: number[] = [];
-  for (const tagName of tagNames) {
-    const id = await findOrCreateTag(siteUrl, authHeader, tagName);
-    if (id > 0) {
-      tagIds.push(id);
-    }
-  }
+
+  const tagIds = (
+    await Promise.all(tagNames.map(name => findOrCreateTag(siteUrl, authHeader, name)))
+  ).filter(id => id > 0);
 
   onLog(`[${article.title}] Enviando artigo para o WordPress...`, 'info');
 
@@ -258,6 +256,7 @@ export async function schedulePost(
 
   const payload: any = {
     title: article.title.trim(),
+    excerpt: article.excerpt?.trim() || '',
     content: wrapInGutenbergBlocks(article.content.trim()),
     status: publishMode, // 'future' = agendado | 'draft' = rascunho
     slug: article.slug.trim(),
