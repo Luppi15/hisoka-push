@@ -7,9 +7,33 @@ from flask import Blueprint, request, jsonify
 from requests.auth import HTTPBasicAuth
 import requests
 import configuracao
-from servicos.wordpress import cadastrar_post
+from servicos.wordpress import cadastrar_post, verificar_slug_existente
 
 bp_publicacao = Blueprint('publicacao', __name__)
+
+@bp_publicacao.route("/verificar-slug", methods=["GET"])
+def verificar_slug():
+    """
+    Verifica se um slug já está em uso no WordPress.
+    """
+    slug = request.args.get("slug", "").strip()
+    if not slug:
+        return jsonify({"success": False, "message": "Parâmetro slug ausente."}), 400
+        
+    configuracao.carregar_configuracoes()
+    if not configuracao.WP_URL or not configuracao.WP_USUARIO or not configuracao.WP_SENHA_APLICATIVO:
+        return jsonify({
+            "success": False,
+            "message": "Configurações do WordPress ausentes."
+        }), 400
+
+    existe, titulo = verificar_slug_existente(slug)
+    
+    return jsonify({
+        "success": True,
+        "existe": existe,
+        "titulo": titulo
+    })
 
 @bp_publicacao.route("/publish", methods=["POST"])
 def publicar_artigo():

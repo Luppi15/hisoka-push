@@ -53,7 +53,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const estadoVazioLinks = document.getElementById("links-empty-state");
     const feedLinks = document.getElementById("links-feed");
     const botaoLimparLinks = document.getElementById("btn-clear-links");
+    const botaoCopiarTodosLinks = document.getElementById("btn-copy-all-links");
     let artigosGeradosHistorico = [];
+
+    // Estado do Verificador de Slug Duplicado
+    let slugEmUso = false;
+    let tituloPostDuplicado = "";
+    let temporizadorSlugCheck = null;
+    const msgSlugCheck = document.getElementById("slug-check-msg");
 
     // ==========================================================================
     // 0. CONTROLES DO TEMA (DARK/LIGHT) E MAXIMIZADOR DE PREVIEW
@@ -229,7 +236,66 @@ document.addEventListener("DOMContentLoaded", () => {
                 .replace(/\s+/g, "-")            // substitui espaços por traços
                 .replace(/-+/g, "-");            // remove traços duplicados
             entradaSlug.value = slugGerado;
+            verificarSlugDinamico(slugGerado);
         }
+    });
+
+    function verificarSlugDinamico(slug) {
+        if (temporizadorSlugCheck) {
+            clearTimeout(temporizadorSlugCheck);
+        }
+
+        const slugLimpo = slug.trim();
+        if (!slugLimpo) {
+            if (msgSlugCheck) {
+                msgSlugCheck.classList.add("hidden");
+                msgSlugCheck.textContent = "";
+            }
+            slugEmUso = false;
+            tituloPostDuplicado = "";
+            return;
+        }
+
+        if (msgSlugCheck) {
+            msgSlugCheck.classList.remove("hidden");
+            msgSlugCheck.style.color = "var(--color-text-secondary, #9e9e9e)";
+            msgSlugCheck.textContent = "Verificando disponibilidade do slug...";
+        }
+
+        temporizadorSlugCheck = setTimeout(() => {
+            fetch(`/verificar-slug?slug=${encodeURIComponent(slugLimpo)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.existe) {
+                            slugEmUso = true;
+                            tituloPostDuplicado = data.titulo || "Sem Título";
+                            if (msgSlugCheck) {
+                                msgSlugCheck.style.color = "#ec407a"; // Rosa Hisoka / Aviso
+                                msgSlugCheck.textContent = `⚠️ Slug em uso no post: "${tituloPostDuplicado}"`;
+                            }
+                        } else {
+                            slugEmUso = false;
+                            tituloPostDuplicado = "";
+                            if (msgSlugCheck) {
+                                msgSlugCheck.style.color = "#26a69a"; // Teal Hisoka / Sucesso
+                                msgSlugCheck.textContent = "✓ Slug disponível!";
+                            }
+                        }
+                    } else {
+                        if (msgSlugCheck) msgSlugCheck.classList.add("hidden");
+                        slugEmUso = false;
+                    }
+                })
+                .catch(() => {
+                    if (msgSlugCheck) msgSlugCheck.classList.add("hidden");
+                    slugEmUso = false;
+                });
+        }, 500);
+    }
+
+    entradaSlug.addEventListener("input", () => {
+        verificarSlugDinamico(entradaSlug.value);
     });
     
     entradaSlug.addEventListener("change", () => {
@@ -238,6 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             delete entradaSlug.dataset.manualEdited;
         }
+        verificarSlugDinamico(entradaSlug.value);
     });
     
     // ==========================================================================
@@ -291,7 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const linkEdicao = `${wpUrl}/wp-admin/post.php?post=${postId}&action=edit`;
 
-        artigosGeradosHistorico.unshift({
+        artigosGeradosHistorico.push({
             title: titulo,
             postId: postId,
             status: status, // "Publicado", "Agendado", "Rascunho"
@@ -404,6 +471,26 @@ document.addEventListener("DOMContentLoaded", () => {
             exibirNotificacao("Histórico de links limpo!", "info");
         });
     }
+
+    if (botaoCopiarTodosLinks) {
+        botaoCopiarTodosLinks.addEventListener("click", () => {
+            if (artigosGeradosHistorico.length === 0) {
+                exibirNotificacao("Nenhum link gerado para copiar!", "warning");
+                return;
+            }
+            
+            // Copia apenas a URL limpa de cada um pulando uma linha (com \n)
+            const todosLinks = artigosGeradosHistorico.map(art => art.editLink).join("\n");
+            navigator.clipboard.writeText(todosLinks)
+                .then(() => {
+                    exibirNotificacao("Todos os links copiados!", "success");
+                    adicionarLogTerminal("Todos os links de edição do WP foram copiados (separados por quebra de linha).", "success");
+                })
+                .catch(err => {
+                    adicionarLogTerminal("Erro ao copiar links: " + err, "error");
+                });
+        });
+    }
     
     // Extrair e validar dados do formulário principal
     function obterDadosFormulario() {
@@ -424,10 +511,19 @@ document.addEventListener("DOMContentLoaded", () => {
             nomeCategoria = entradaCategoriasManual.value.trim();
         }
 
-        const categorias = [];
-        if (nomeCategoria) {
-            categorias.push(nomeCategoria);
+        if (!nomeCategoria) {
+            adicionarLogTerminal("Erro: É obrigatório selecionar ou digitar uma categoria!", "error");
+            exibirNotificacao("Categoria obrigatória ausente!", "error");
+            if (entradaCategorias && !entradaCategorias.classList.contains("hidden")) {
+                entradaCategorias.focus();
+            } else if (entradaCategoriasManual) {
+                entradaCategoriasManual.focus();
+            }
+            return null;
         }
+
+        const categorias = [];
+        categorias.push(nomeCategoria);
 
         const tags = entradaTags.value
             .split(",")
@@ -487,6 +583,15 @@ document.addEventListener("DOMContentLoaded", () => {
     botaoPublicarWp.addEventListener("click", async () => {
         const dados = obterDadosFormulario();
         if (!dados) return;
+        
+        if (slugEmUso) {
+            const prosseguir = confirm(`Atenção: O slug "${dados.slug}" já está em uso pelo post "${tituloPostDuplicado}".\n\nDeseja publicar mesmo assim? (O WordPress adicionará "-2" no link automaticamente)`);
+            if (!prosseguir) {
+                adicionarLogTerminal("Envio abortado pelo usuário: slug duplicado detectado.", "warning");
+                exibirNotificacao("Envio cancelado!", "warning");
+                return;
+            }
+        }
         
         botaoPublicarWp.disabled = true;
         botaoExportarJson.disabled = true;
@@ -552,16 +657,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                                        const proximoIndice = wizardIndex + 1;
                     if (proximoIndice < wizardQueue.length) {
-                        // Delay aleatório entre 10 e 15 segundos
-                        const delayAleatorioMs = Math.floor(Math.random() * (15000 - 10000 + 1)) + 10000;
-                        const delaySegundos = (delayAleatorioMs / 1000).toFixed(0);
-                        
-                        adicionarLogTerminal(`✓ Artigo ${wizardIndex + 1} de ${wizardQueue.length} enviado. Fila Assistida: aguardando delay aleatório anti-spam de ${delaySegundos} segundos antes de carregar o próximo artigo...`, "warning");
-                        exibirNotificacao(`Artigo enviado! Próximo em ${delaySegundos}s`, "info");
-                        
-                        setTimeout(() => {
-                            carregarArtigoWizard(proximoIndice);
-                        }, delayAleatorioMs);
+                        adicionarLogTerminal(`✓ Artigo ${wizardIndex + 1} de ${wizardQueue.length} enviado. Carregando o próximo artigo da Fila Assistida...`, "success");
+                        exibirNotificacao("Artigo enviado! Carregando próximo...", "success");
+                        carregarArtigoWizard(proximoIndice);
                     } else {
                         adicionarLogTerminal("🎉 Parabéns! Todos os artigos da fila em lote foram publicados com sucesso!", "success");
                         exibirNotificacao("Fila em lote concluída com sucesso!", "success");
@@ -1207,6 +1305,10 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (botaoWizardAnterior) botaoWizardAnterior.disabled = indice === 0;
         if (botaoWizardProximo) botaoWizardProximo.disabled = indice === window.wizardQueue.length - 1;
+        
+        if (entradaSlug) {
+            verificarSlugDinamico(entradaSlug.value);
+        }
         
         adicionarLogTerminal(`Fila Ativa: Artigo ${indice + 1}/${window.wizardQueue.length} carregado no formulário.`, "info");
     };

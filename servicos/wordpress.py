@@ -285,3 +285,37 @@ def cadastrar_post(dados):
             return False, f"Erro retornado pelo WordPress: {msg_erro}", None, None, None
     except Exception as e:
         return False, f"Falha de conexão com a REST API: {str(e)}", None, None, None
+
+def verificar_slug_existente(slug):
+    """
+    Verifica na API REST do WordPress se um determinado slug já existe.
+    Busca por posts com status publish, future, draft, pending, trash.
+    Retorna (existe: bool, titulo: str)
+    """
+    if not slug:
+        return False, ""
+        
+    configuracao.carregar_configuracoes()
+    auth = HTTPBasicAuth(configuracao.WP_USUARIO, configuracao.WP_SENHA_APLICATIVO)
+    url_posts = f"{configuracao.WP_URL.rstrip('/')}/wp-json/wp/v2/posts"
+    
+    params = {
+        "slug": slug,
+        "status": "publish,future,draft,pending,trash"
+    }
+    
+    try:
+        resposta = requests.get(url_posts, auth=auth, params=params, timeout=10)
+        if resposta.status_code == 200:
+            posts = resposta.json()
+            if isinstance(posts, list) and len(posts) > 0:
+                post = posts[0]
+                titulo_post = post.get("title", {}).get("rendered", "Sem Título")
+                return True, titulo_post
+            return False, ""
+        else:
+            logging.warning(f"Erro ao verificar slug na REST API ({resposta.status_code}): {resposta.text}")
+            return False, ""
+    except Exception as e:
+        logging.error(f"Erro de conexão ao verificar slug: {str(e)}")
+        return False, ""
