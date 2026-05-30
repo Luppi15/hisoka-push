@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordPress Article Publisher - Clean Slate Dashboard</title>
+    <meta name="description" content="WordPress Article Publisher - Painel local premium para colar, exportar em JSON e agendar artigos de forma inteligente com SEO Yoast e vetores inline.">
+    <meta property="og:title" content="WP Article Publisher - Clean Slate">
+    <meta property="og:description" content="Painel local premium para colar, exportar em JSON e agendar artigos no WordPress.">
+    <meta property="og:type" content="website">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Folha de estilo personalizada -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Barra Lateral / Header Superior -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/>
+                        <line x1="16" y1="8" x2="2" y2="22"/>
+                        <line x1="17.5" y1="15" x2="9" y2="15"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>WP Publisher</h1>
+                    <span class="logo-sub">Clean Slate Overhaul V2</span>
+                </div>
+            </div>
+            
+            <div class="connection-status">
+                {% if wp_configured %}
+                    <span class="status-badge connected">
+                        <span class="pulse-dot"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        WordPress Conectado: <strong class="wp-url-text">{{ wp_url }}</strong>
+                    </span>
+                {% else %}
+                    <span class="status-badge disconnected">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        WordPress Desconectado
+                    </span>
+                {% endif %}
+                <button class="settings-btn" id="btn-open-settings" title="Configurar Credenciais do WordPress">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Corpo Principal da Aplicação -->
+        <main class="app-main">
+            <div class="grid-layout">
+                <!-- Coluna da Esquerda: Formulário de Entrada -->
+                <section class="form-section card">
+                    <!-- Cabeçalho de Abas para Alternar Modo -->
+                    <div class="tabs-nav">
+                        <button type="button" class="tab-btn active" data-tab="single-mode">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                            </svg>
+                            Artigo Individual
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="bulk-mode">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                <line x1="12" y1="22.08" x2="12" y2="12"/>
+                            </svg>
+                            Planejador em Lote
+                        </button>
+                    </div>
+
+                    <!-- ABA 1: ARTIGO INDIVIDUAL -->
+                    <div class="tab-content" id="single-mode-content">
+                        <!-- Wizard Bar de Fila Ativa -->
+                        <div class="wizard-bar hidden" id="wizard-bar">
+                            <div class="wizard-info">
+                                <span class="wizard-badge">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon svg-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+                                        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                                        <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+                                        <line x1="6.34" y1="17.66" x2="9.17" y2="14.83"/><line x1="14.83" y1="9.17" x2="17.66" y2="6.34"/>
+                                    </svg>
+                                    Fila Ativa
+                                </span>
+                                <span class="wizard-status" id="wizard-status-text">Artigo 1 de 10</span>
+                            </div>
+                            <div class="wizard-controls">
+                                <button type="button" class="btn-wizard" id="btn-wizard-prev" title="Voltar Artigo">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="15 18 9 12 15 6"/>
+                                    </svg>
+                                </button>
+                                <button type="button" class="btn-wizard" id="btn-wizard-next" title="Pular Artigo">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="9 18 15 12 9 6"/>
+                                    </svg>
+                                </button>
+                                <button type="button" class="btn-wizard danger" id="btn-wizard-cancel" title="Cancelar Fila">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <form id="article-form" class="article-form">
+                            <!-- ACORDEÃO 1: IDENTIFICAÇÃO E CATEGORIAS -->
+                            <div class="accordion-item active" id="accordion-meta">
+                                <button type="button" class="accordion-header">
+                                    <span class="accordion-title">
+                                        <span class="step-num">1</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <polyline points="14 2 14 8 20 8"/>
+                                            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                                        </svg>
+                                        Metadados do Artigo
+                                    </span>
+                                    <span class="accordion-arrow">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="6 9 12 15 18 9"/>
+                                        </svg>
+                                    </span>
+                                </button>
+                                <div class="accordion-content">
+                                    <div class="accordion-inner">
+                                        <!-- Título e Slug -->
+                                        <div class="form-row split">
+                                            <div class="form-group">
+                                                <label for="title">Título do Artigo <span class="required">*</span></label>
+                                                <input type="text" id="title" placeholder="Ex: Como Escolher o Melhor Teclado Mecânico" required autocomplete="off">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="slug">Slug / URL Amigável (Opcional)</label>
+                                                <input type="text" id="slug" placeholder="Ex: melhor-teclado-mecanico" autocomplete="off">
+                                            </div>
+                                        </div>
+
+                                        <!-- Categorias e Tags -->
+                                        <div class="form-row split mt-1">
+                                            <div class="form-group">
+                                                <label for="categories">Categoria <span class="required">*</span></label>
+                                                <div class="category-select-wrapper">
+                                                    <select id="categories" class="select-premium">
+                                                        <option value="">Carregando categorias...</option>
+                                                    </select>
+                                                    <!-- Container de skeleton loaders para a carga das categorias -->
+                                                    <div class="skeleton-container hidden" id="categories-skeleton">
+                                                        <div class="skeleton skeleton-input"></div>
+                                                    </div>
+                                                    <input type="text" id="categories_manual" class="hidden" placeholder="Digite a categoria manualmente..." autocomplete="off">
+                                                </div>
+                                                <span class="field-tip" id="categories-tip">Selecione uma categoria do WordPress cadastrada no seu site.</span>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="tags">Tags (Separadas por vírgula)</label>
+                                                <input type="text" id="tags" placeholder="Ex: tecnologia, setup, teclados" autocomplete="off">
+                                                <span class="field-tip">Tags novas serão criadas automaticamente no WordPress se não existirem.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ACORDEÃO 2: CONTEÚDO HTML -->
+                            <div class="accordion-item" id="accordion-editor">
+                                <button type="button" class="accordion-header">
+                                    <span class="accordion-title">
+                                        <span class="step-num">2</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="12" y1="2" x2="12" y2="22"/>
+                                        </svg>
+                                        Editor de Conteúdo HTML
+                                    </span>
+                                    <span class="accordion-arrow">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="6 9 12 15 18 9"/>
+                                        </svg>
+                                    </span>
+                                </button>
+                                <div class="accordion-content">
+                                    <div class="accordion-inner">
+                                        <div class="form-group">
+                                            <div class="label-with-action">
+                                                <label for="content">Conteúdo em HTML Bruto <span class="required">*</span></label>
+                                                <span class="action-hint" id="format-html-btn">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+                                                    </svg>
+                                                    HTML Mode
+                                                </span>
+                                            </div>
+                                            <textarea id="content" placeholder="Cole aqui o código HTML completo do seu artigo..." required class="code-font"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ACORDEÃO 3: METADADOS YOAST SEO -->
+                            <div class="accordion-item" id="accordion-seo">
+                                <button type="button" class="accordion-header">
+                                    <span class="accordion-title">
+                                        <span class="step-num">3</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                                        </svg>
+                                        Otimização Yoast SEO
+                                    </span>
+                                    <span class="accordion-arrow">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="6 9 12 15 18 9"/>
+                                        </svg>
+                                    </span>
+                                </button>
+                                <div class="accordion-content">
+                                    <div class="accordion-inner">
+                                        <div class="form-row split">
+                                            <div class="form-group">
+                                                <label for="focus_keyword">Palavra-Chave Foco</label>
+                                                <input type="text" id="focus_keyword" placeholder="Ex: teclado mecanico" autocomplete="off">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <div class="label-with-counter">
+                                                    <label for="meta_description">Meta Descrição</label>
+                                                    <span class="char-counter" id="meta-counter">0 / 160</span>
+                                                </div>
+                                                <input type="text" id="meta_description" placeholder="Ex: Descubra como escolher o teclado mecânico ideal..." autocomplete="off">
+                                                <div class="progress-bar-container">
+                                                    <div class="progress-bar" id="meta-progress"></div>
+                                                </div>
+                                                <span class="field-tip" id="meta-tip">Comprimento recomendado: 120-160 caracteres.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ACORDEÃO 4: AGENDAMENTO E STATUS -->
+                            <div class="accordion-item" id="accordion-schedule">
+                                <button type="button" class="accordion-header">
+                                    <span class="accordion-title">
+                                        <span class="step-num">4</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                                        </svg>
+                                        Status e Agendamento
+                                    </span>
+                                    <span class="accordion-arrow">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="6 9 12 15 18 9"/>
+                                        </svg>
+                                    </span>
+                                </button>
+                                <div class="accordion-content">
+                                    <div class="accordion-inner">
+                                        <div class="form-row split">
+                                            <div class="form-group">
+                                                <label for="post_status">Status do Artigo</label>
+                                                <select id="post_status" class="select-premium">
+                                                    <option value="publish_schedule" selected>Publicar ou Agendar (Padrão)</option>
+                                                    <option value="draft">Salvar como Rascunho (Draft)</option>
+                                                </select>
+                                                <span class="field-tip">Selecione se deseja enviar diretamente ou salvar como rascunho.</span>
+                                            </div>
+                                            <div class="form-group" id="schedule-group">
+                                                <label for="schedule_datetime"><svg xmlns="http://www.w3.org/2000/svg" class="svg-icon align-middle" style="height:1.1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Data e Hora de Agendamento (Opcional)</label>
+                                                <input type="datetime-local" id="schedule_datetime">
+                                                <span class="field-tip" id="schedule-tip">Deixe em branco para publicar imediatamente.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div> <!-- Fim de #single-mode-content -->
+
+                    <!-- ABA 2: PLANEJADOR EM LOTE -->
+                    <div class="tab-content hidden" id="bulk-mode-content">
+                        <div class="bulk-form">
+                            <p class="bulk-description">Agende múltiplos artigos de uma vez! Insira uma lista de títulos e uma lista correspondente de horários, selecione a data base e carregue-os na fila assistida.</p>
+                            
+                            <!-- Linha de Textareas Lado a Lado -->
+                            <div class="form-row split">
+                                <div class="form-group">
+                                    <div class="label-with-counter">
+                                        <label for="bulk-titles">Lista de Títulos (Um por linha)</label>
+                                        <span class="counter-badge" id="bulk-titles-counter">0 títulos</span>
+                                    </div>
+                                    <textarea id="bulk-titles" class="bulk-textarea" placeholder="Cole aqui os títulos dos artigos (um por linha)...&#10;Ex: O truque de colocar uma folha de louro na máquina&#10;Ex: Por que você nunca deve guardar tomates na geladeira"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <div class="label-with-counter">
+                                        <label for="bulk-times">Horários (Um por linha, formato HH:MM)</label>
+                                        <span class="counter-badge" id="bulk-times-counter">0 horários</span>
+                                    </div>
+                                    <textarea id="bulk-times" class="bulk-textarea code-font" placeholder="Cole aqui os horários (um por linha)...&#10;Ex: 22:15&#10;Ex: 13:15"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Data Base e Validador de Consistência -->
+                            <div class="form-row split align-center">
+                                <div class="form-group">
+                                    <label for="bulk-base-date">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon align-middle" style="height:1.1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                        Data Base de Agendamento
+                                    </label>
+                                    <input type="date" id="bulk-base-date">
+                                    <span class="field-tip">Os horários serão agendados a partir desta data.</span>
+                                </div>
+                                <div class="form-group">
+                                    <label>Status de Consistência</label>
+                                    <div class="consistency-status-panel" id="consistency-badge">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                                        </svg>
+                                        Cole títulos e horários para validar.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Visual Preview List de Mapeamento -->
+                            <div class="form-group">
+                                <label>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon align-middle" style="height:1.1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    Visualização do Mapeamento de Fila
+                                </label>
+                                <div class="bulk-preview-container">
+                                    <div class="bulk-preview-list" id="bulk-preview-list">
+                                        <div class="preview-empty-msg">Nenhum título mapeado ainda. Insira títulos e horários acima.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botões de Ação do Lote -->
+                            <div class="button-grid bulk-actions">
+                                <button type="button" class="btn btn-primary" id="btn-bulk-load-wizard" disabled style="width: 100%;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/>
+                                    </svg>
+                                    Carregar Fila no Assistente
+                                </button>
+                            </div>
+                        </div>
+                    </div> <!-- Fim de #bulk-mode-content -->
+                </section>
+
+                <!-- Coluna da Direita: Abas de Console e Live Preview, mais Ações -->
+                <section class="action-section">
+                    <!-- Painel de Ações Rápidas -->
+                    <div class="action-card card">
+                        <div class="card-header">
+                            <h2>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon text-gradient" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                                    <polyline points="2 17 12 22 22 17"/>
+                                    <polyline points="2 12 12 17 22 12"/>
+                                </svg>
+                                Central de Ações
+                            </h2>
+                        </div>
+                        <div class="button-grid">
+                            <input type="file" id="input-import-json" accept=".json" class="hidden">
+                            <button type="button" class="btn btn-secondary" id="btn-import-json" title="Importar artigo de um arquivo JSON">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
+                                </svg>
+                                Importar JSON
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="btn-export-json" title="Exportar artigo preenchido como arquivo JSON">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="12" y1="12" x2="12" y2="18"/><polyline points="15 15 12 12 9 15"/>
+                                </svg>
+                                Exportar JSON
+                            </button>
+                            <button type="button" class="btn btn-primary" id="btn-publish-wp">
+                                <span class="btn-text">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon align-middle mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20.88 18.04A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/>
+                                        <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+                                    </svg>
+                                    Publicar / Agendar
+                                </span>
+                                <span class="spinner hidden">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon svg-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+                                        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                                        <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+                                        <line x1="6.34" y1="17.66" x2="9.17" y2="14.83"/><line x1="14.83" y1="9.17" x2="17.66" y2="6.34"/>
+                                    </svg>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dual Panel Abas: Console & Live Preview -->
+                    <div class="card right-panel-card">
+                        <div class="right-panel-header">
+                            <div class="tabs-nav right-tabs">
+                                <button type="button" class="tab-btn active" data-tab="right-console">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+                                    </svg>
+                                    Console
+                                </button>
+                                <button type="button" class="tab-btn" data-tab="right-preview" id="tab-btn-preview">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    Visualizar Artigo
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Conteúdo da Direita: CONSOLE -->
+                        <div class="tab-content" id="right-console-content">
+                            <div class="console-body-wrapper">
+                                <div class="console-action-bar">
+                                    <span>Logs de Execução</span>
+                                    <button class="clear-btn" id="btn-clear-console">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                                        </svg>
+                                        Limpar
+                                    </button>
+                                </div>
+                                <div class="console-body" id="console-output">
+                                    <div class="console-line system"><span class="time">[00:00:00]</span> Painel inicializado com sucesso. Aguardando ações...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conteúdo da Direita: LIVE HTML PREVIEW -->
+                        <div class="tab-content hidden" id="right-preview-content">
+                            <div class="preview-body-wrapper">
+                                <div class="preview-action-bar">
+                                    <span>Renderização em Tempo Real (Sanitizada)</span>
+                                </div>
+                                <div class="preview-container" id="live-preview-container">
+                                    <div class="preview-empty-state" id="live-preview-empty">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" style="height: 3rem; width: 3rem; margin-bottom: 1rem; color: var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                                            <polyline points="14 2 14 8 20 8"/>
+                                            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                                        </svg>
+                                        Digite algo no editor de conteúdo HTML para ver a mágica acontecer aqui...
+                                    </div>
+                                    <div class="live-preview-content hidden" id="live-preview-content"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Configurações das Credenciais -->
+    <div class="modal-overlay hidden" id="settings-modal">
+        <div class="modal-container card">
+            <div class="modal-header card-header">
+                <h2>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon text-gradient" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    Configurações do WordPress
+                </h2>
+                <button class="modal-close" id="btn-close-settings-header" title="Fechar">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <p class="modal-description">Insira as credenciais do seu WordPress. Elas serão salvas localmente com segurança no arquivo <code>.env</code> do seu projeto.</p>
+                
+                <div class="modal-form">
+                    <div class="form-group">
+                        <label for="settings-wp-url">URL do WordPress <span class="required">*</span></label>
+                        <input type="text" id="settings-wp-url" placeholder="Ex: https://meusite.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="settings-wp-user">Usuário <span class="required">*</span></label>
+                        <input type="text" id="settings-wp-user" placeholder="Ex: admin">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="settings-wp-password">Senha de Aplicativo (Application Password) <span class="required">*</span></label>
+                        <input type="text" id="settings-wp-password" placeholder="Ex: xxxx xxxx xxxx xxxx xxxx">
+                        <span class="field-tip">Gere essa senha no painel do WordPress em: Usuários > Perfil > Senhas de Aplicativo.</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <div class="modal-status-msg" id="settings-status-msg"></div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" id="btn-test-settings">
+                        <span class="btn-text">Testar Conexão</span>
+                        <span class="spinner hidden">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon svg-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+                                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                                <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+                                <line x1="6.34" y1="17.66" x2="9.17" y2="14.83"/><line x1="14.83" y1="9.17" x2="17.66" y2="6.34"/>
+                            </svg>
+                        </span>
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btn-save-settings">Salvar Credenciais</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Global para Toasts Flutuantes -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts da aplicação -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
