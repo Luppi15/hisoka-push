@@ -71,9 +71,9 @@ def publicar_em_lote():
         titulo = art.get("title", "").strip()
         data_agendamento = art.get("schedule_datetime", "").strip()
         
-        # Delay aleatório entre 40 segundos e 1:10 minutos (70 segundos) para humanização
+        # Delay aleatório entre 10 e 15 segundos para humanização
         if indice > 0:
-            delay = random.randint(40, 70)
+            delay = random.randint(10, 15)
             logging.info(f"[Lote] Aguardando delay anti-spam de {delay} segundos antes de enviar '{titulo}'...")
             time.sleep(delay)
             
