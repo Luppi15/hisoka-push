@@ -257,9 +257,14 @@ class UXAuditor:
         for family in font_family_css:
             # Extract first font from stack
             first_font = family.split(',')[0].strip().strip('"\'')
+            first_font_lower = first_font.lower()
 
-            if first_font.lower() not in {'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'system-ui', 'inherit', 'arial', 'georgia', 'times new roman', 'courier new', 'verdana', 'helvetica', 'tahoma'}:
-                font_families.add(first_font.lower())
+            # Ignore CSS custom properties (variables) or their usage
+            if (first_font_lower.startswith('var(') or 
+                first_font_lower.startswith('--') or 
+                first_font_lower in {'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'system-ui', 'inherit', 'arial', 'georgia', 'times new roman', 'courier new', 'verdana', 'helvetica', 'tahoma'}):
+                continue
+            font_families.add(first_font_lower)
 
         if len(font_families) > 3:
             self.issues.append(f"[Typography] {filename}: {len(font_families)} font families detected. Limit to 2-3 for cohesion.")
@@ -498,14 +503,16 @@ class UXAuditor:
         # --- 4. COLOR SYSTEM (color-system.md) ---
 
         # 4.1 PURPLE BAN - Critical check from color-system.md
-        purple_hexes = ['#8B5CF6', '#A855F7', '#9333EA', '#7C3AED', '#6D28D9',
-                        '#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE', '#EDE9FE',
-                        '#8b5cf6', '#a855f7', '#9333ea', '#7c3aed', '#6d28d9',
-                        'purple', 'violet', 'fuchsia', 'magenta', 'lavender']
-        for purple in purple_hexes:
-            if purple.lower() in content.lower():
-                self.issues.append(f"[Color] {filename}: PURPLE DETECTED ('{purple}'). Banned by Maestro rules. Use Teal/Cyan/Emerald instead.")
-                break
+        # Allow disabling the purple ban for explicit user/brand requirements (e.g. Hisoka theme)
+        if "disable-purple-ban" not in content.lower():
+            purple_hexes = ['#8B5CF6', '#A855F7', '#9333EA', '#7C3AED', '#6D28D9',
+                            '#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE', '#EDE9FE',
+                            '#8b5cf6', '#a855f7', '#9333ea', '#7c3aed', '#6d28d9',
+                            'purple', 'violet', 'fuchsia', 'magenta', 'lavender']
+            for purple in purple_hexes:
+                if purple.lower() in content.lower():
+                    self.issues.append(f"[Color] {filename}: PURPLE DETECTED ('{purple}'). Banned by Maestro rules. Use Teal/Cyan/Emerald instead.")
+                    break
 
         # 4.2 60-30-10 Rule check
         # Count color usage to estimate ratio

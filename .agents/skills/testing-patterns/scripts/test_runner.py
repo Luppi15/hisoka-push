@@ -70,8 +70,8 @@ def detect_test_framework(project_path: Path) -> dict:
     if (project_path / "pyproject.toml").exists() or (project_path / "requirements.txt").exists():
         result["type"] = "python"
         result["framework"] = "unittest"
-        result["cmd"] = ["python", "-m", "unittest", "discover", "-v"]
-        result["coverage_cmd"] = ["python", "-m", "unittest", "discover", "-v"]
+        result["cmd"] = [sys.executable, "-m", "unittest", "discover", "-v"]
+        result["coverage_cmd"] = [sys.executable, "-m", "unittest", "discover", "-v"]
     
     return result
 

@@ -24,5 +24,5 @@ app.register_blueprint(bp_configuracao)
 app.register_blueprint(bp_categorias)
 
 if __name__ == "__main__":
-    logging.info(f"Iniciando o servidor local do WP Article Publisher na porta {configuracao.FLASK_PORTA}...")
+    logging.info(f"Iniciando o servidor local do Hisoka Push V2 na porta {configuracao.FLASK_PORTA}...")
     app.run(host="127.0.0.1", port=configuracao.FLASK_PORTA, debug=configuracao.FLASK_DEPURACAO)

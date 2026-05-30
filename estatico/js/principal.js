@@ -410,15 +410,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const titulo = entradaTitulo.value.trim();
         const conteudo = entradaConteudo.value.trim();
         
-        if (!titulo || !conteudo) {
-            adicionarLogTerminal("Erro: Os campos Título e Conteúdo HTML são obrigatórios!", "error");
-            exibirNotificacao("Campos obrigatórios ausentes!", "error");
-            
-            if (!titulo) {
-                entradaTitulo.focus();
-            } else if (!conteudo) {
-                entradaConteudo.focus();
-            }
+        if (!titulo) {
+            adicionarLogTerminal("Erro: O campo Título é obrigatório!", "error");
+            exibirNotificacao("Título obrigatório ausente!", "error");
+            entradaTitulo.focus();
             return null;
         }
         
@@ -439,7 +434,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .map(t => t.trim())
             .filter(t => t.length > 0);
             
-        const statusPost = entradaStatusPost ? entradaStatusPost.value : "publish_schedule";
+        const statusPost = entradaStatusPost ? entradaStatusPost.value : "draft";
             
         return {
             title: titulo,
@@ -557,8 +552,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                                        const proximoIndice = wizardIndex + 1;
                     if (proximoIndice < wizardQueue.length) {
-                        // Delay aleatório entre 40 segundos e 1:10 minutos (70 segundos)
-                        const delayAleatorioMs = Math.floor(Math.random() * (70000 - 40000 + 1)) + 40000;
+                        // Delay aleatório entre 10 e 15 segundos
+                        const delayAleatorioMs = Math.floor(Math.random() * (15000 - 10000 + 1)) + 10000;
                         const delaySegundos = (delayAleatorioMs / 1000).toFixed(0);
                         
                         adicionarLogTerminal(`✓ Artigo ${wizardIndex + 1} de ${wizardQueue.length} enviado. Fila Assistida: aguardando delay aleatório anti-spam de ${delaySegundos} segundos antes de carregar o próximo artigo...`, "warning");
@@ -611,7 +606,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const botaoTestarConfig = document.getElementById("btn-test-settings");
     const botaoSalvarConfig = document.getElementById("btn-save-settings");
     const msgStatusConfig = document.getElementById("settings-status-msg");
-    const containerStatusConexao = document.querySelector(".connection-status");
+    const connectionBadge = document.getElementById("wp-connection-badge");
 
     // Abrir modal e buscar configurações atuais
     botaoAbrirConfig.addEventListener("click", async () => {
@@ -732,7 +727,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 exibirNotificacao("Credenciais salvas localmente!", "success");
                 
                 // Atualizar o status badge do Header
-                containerStatusConexao.innerHTML = `
+                connectionBadge.innerHTML = `
                     <span class="status-badge connected">
                         <span class="pulse-dot"></span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -741,34 +736,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         </svg>
                         WordPress Conectado: <strong class="wp-url-text">${wp_url}</strong>
                     </span>
-                    <button class="theme-toggle-btn" id="btn-theme-toggle" title="Alternar Tema (Claro/Escuro)">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon sun-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="5"/>
-                            <line x1="12" y1="1" x2="12" y2="3"/>
-                            <line x1="12" y1="21" x2="12" y2="23"/>
-                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                            <line x1="1" y1="12" x2="3" y2="12"/>
-                            <line x1="21" y1="12" x2="23" y2="12"/>
-                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                        </svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon moon-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                        </svg>
-                    </button>
-                    <button class="settings-btn" id="btn-open-settings" title="Configurar Credenciais do WordPress">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                        </svg>
-                    </button>
                 `;
-
-                // Recriar binds para os novos botões do Header
-                document.getElementById("btn-open-settings").addEventListener("click", () => {
-                    botaoAbrirConfig.click();
-                });
                 
                 fecharModalConfig();
                 carregarCategoriasWp();
@@ -860,7 +828,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     entradaStatusPost.value = parseado.post_status;
                     entradaStatusPost.dispatchEvent(new Event("change"));
                 } else if (entradaStatusPost) {
-                    entradaStatusPost.value = "publish_schedule";
+                    entradaStatusPost.value = "draft";
                     entradaStatusPost.dispatchEvent(new Event("change"));
                 }
 
@@ -1177,7 +1145,7 @@ document.addEventListener("DOMContentLoaded", () => {
             entradaTags.value = artigo.tags || "";
             entradaPalavraFoco.value = artigo.focus_keyword || "";
             entradaMetaDesc.value = artigo.meta_description || "";
-            if (entradaStatusPost) entradaStatusPost.value = artigo.post_status || "publish_schedule";
+            if (entradaStatusPost) entradaStatusPost.value = artigo.post_status || "draft";
             
             const valorCategoria = artigo.category || "";
             if (entradaCategorias) {
@@ -1207,14 +1175,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     entradaCategoriasManual.value = "";
                 }
             }
-            if (entradaStatusPost) entradaStatusPost.value = "publish_schedule";
+            if (entradaStatusPost) entradaStatusPost.value = "draft";
             
             artigo.content = "";
             artigo.focus_keyword = "";
             artigo.meta_description = "";
             artigo.tags = "";
             artigo.category = "";
-            artigo.post_status = "publish_schedule";
+            artigo.post_status = "draft";
             artigo.isConfigured = true;
         }
         
@@ -1254,7 +1222,7 @@ document.addEventListener("DOMContentLoaded", () => {
         entradaTags.value = artigoAnterior.tags || "";
         entradaPalavraFoco.value = artigoAnterior.focus_keyword || "";
         entradaMetaDesc.value = artigoAnterior.meta_description || "";
-        if (entradaStatusPost) entradaStatusPost.value = artigoAnterior.post_status || "publish_schedule";
+        if (entradaStatusPost) entradaStatusPost.value = artigoAnterior.post_status || "draft";
         
         const valorCategoria = artigoAnterior.category || "";
         if (entradaCategorias) {
@@ -1301,7 +1269,7 @@ document.addEventListener("DOMContentLoaded", () => {
         entradaPalavraFoco.value = "";
         entradaMetaDesc.value = "";
         entradaAgendamento.value = "";
-        if (entradaStatusPost) entradaStatusPost.value = "publish_schedule";
+        if (entradaStatusPost) entradaStatusPost.value = "draft";
         
         if (entradaCategorias) {
             if (!entradaCategorias.classList.contains("hidden")) {
@@ -1361,6 +1329,25 @@ document.addEventListener("DOMContentLoaded", () => {
     if (botaoWizardCancelar) {
         botaoWizardCancelar.addEventListener("click", window.cancelarFilaWizard);
     }
+
+    // Atalhos de teclado: Ctrl + Setas Esquerda/Direita para navegar na fila do assistente (wizard)
+    document.addEventListener("keydown", (e) => {
+        if (typeof window.wizardQueue !== "undefined" && window.wizardQueue.length > 0) {
+            if (e.ctrlKey) {
+                if (e.key === "ArrowLeft") {
+                    e.preventDefault();
+                    if (window.wizardIndex > 0) {
+                        window.carregarArtigoWizard(window.wizardIndex - 1);
+                    }
+                } else if (e.key === "ArrowRight") {
+                    e.preventDefault();
+                    if (window.wizardIndex < window.wizardQueue.length - 1) {
+                        window.carregarArtigoWizard(window.wizardIndex + 1);
+                    }
+                }
+            }
+        }
+    });
 
     // Inicialização automática
     carregarCategoriasWp();

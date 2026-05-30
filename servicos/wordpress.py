@@ -172,10 +172,10 @@ def cadastrar_post(dados):
     meta_desc = dados.get("meta_description", "").strip()
     palavra_chave = dados.get("focus_keyword", "").strip()
     data_agendamento = dados.get("schedule_datetime", "").strip()
-    status_escolhido = dados.get("post_status", "publish_schedule")
+    status_escolhido = dados.get("post_status", "draft")
 
-    if not titulo or not conteudo:
-        return False, "Título e Conteúdo HTML são campos obrigatórios.", None, None, None
+    if not titulo:
+        return False, "Título é um campo obrigatório.", None, None, None
 
     # --- Estratégia 1: XML-RPC Bypass (Yoast SEO support) ---
     try:
