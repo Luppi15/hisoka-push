@@ -1,0 +1,15 @@
+# Credenciais
+.env
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+
+# JSON exportado localmente (opcional)
+*.json
+!mcp_config.json

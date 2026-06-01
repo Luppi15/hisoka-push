@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hisoka Push V2 - Clean Slate Dashboard</title>
+    <meta name="description" content="Hisoka Push V2 - Painel local premium para colar, exportar em JSON e agendar artigos de forma inteligente com SEO Yoast e vetores inline.">
+    <meta property="og:title" content="Hisoka Push V2 - Clean Slate">
+    <meta property="og:description" content="Painel local premium para colar, exportar em JSON e agendar artigos no WordPress.">
+    <meta property="og:type" content="website">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('wp-pub-theme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Folha de estilo personalizada -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/termos.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Barra Lateral / Header Superior -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon card-logo">
+                    <span class="card-suit">♠</span>
+                </div>
+                <div class="logo-text">
+                    <h1>Hisoka Push V2</h1>
+                    <span class="logo-sub">Card-themed WordPress Scheduler</span>
+                </div>
+            </div>
+            
+            <div class="connection-status">
+                <div id="wp-connection-badge">
+                    {% if wp_configured %}
+                        <span class="status-badge connected">
+                            <span class="pulse-dot"></span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
+                            WordPress Conectado: <strong class="wp-url-text">{{ wp_url }}</strong>
+                        </span>
+                    {% else %}
+                        <span class="status-badge disconnected">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            WordPress Desconectado
+                        </span>
+                    {% endif %}
+                </div>
+                <button class="theme-toggle-btn" id="btn-theme-toggle" title="Alternar Tema (Claro/Escuro)">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"/>
+                        <line x1="12" y1="1" x2="12" y2="3"/>
+                        <line x1="12" y1="21" x2="12" y2="23"/>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                        <line x1="1" y1="12" x2="3" y2="12"/>
+                        <line x1="21" y1="12" x2="23" y2="12"/>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon moon-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <button class="settings-btn" id="btn-open-settings" title="Configurar Credenciais do WordPress">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Corpo Principal da Aplicação -->
+        <main class="app-main">
+            <div class="grid-layout">
+                <!-- Coluna da Esquerda: Formulário de Entrada -->
+                <section class="form-section card">
+                    <!-- Cabeçalho de Abas para Alternar Modo -->
+                    <div class="tabs-nav">
+                        <button type="button" class="tab-btn active" data-tab="single-mode">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                            </svg>
+                            Artigo Individual
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="bulk-mode">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                <line x1="12" y1="22.08" x2="12" y2="12"/>
+                            </svg>
+                            Planejador em Lote
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="media-mode">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                            Mídias em Lote (♣)
+                        </button>
+                    </div>
+
+                    <!-- ABA 1: ARTIGO INDIVIDUAL -->
+                    <div class="tab-content" id="single-mode-content">
+                        <!-- Wizard Bar de Fila Ativa -->
+                        <div class="wizard-bar hidden" id="wizard-bar">
+                            <div class="wizard-top-row">
+                                <div class="wizard-info">
+                                    <span class="wizard-badge">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon svg-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+                                            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                                            <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+                                            <line x1="6.34" y1="17.66" x2="9.17" y2="14.83"/><line x1="14.83" y1="9.17" x2="17.66" y2="6.34"/>
+                                        </svg>
+                                        Fila Ativa
+                                    </span>
+                                    <span class="wizard-status" id="wizard-status-text">Artigo 1 de 10</span>
+                                </div>
+                                <div class="wizard-controls">
+                                    <button type="button" class="btn-wizard" id="btn-wizard-prev" title="Voltar Artigo">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="15 18 9 12 15 6"/>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="btn-wizard" id="btn-wizard-next" title="Pular Artigo">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="9 18 15 12 9 6"/>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="btn-wizard danger" id="btn-wizard-cancel" title="Cancelar Fila">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Mapa de progresso interativo (Sleek Step Nodes) -->
+                            <div class="wizard-progress-wrapper">
+                                <div class="wizard-progress-map" id="wizard-progress-map">
+                                    <!-- Será preenchido dinamicamente via JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <form id="article-form" class="article-form">
+                            <!-- SEÇÃO 1: METADADOS DO ARTIGO -->
+                            <div class="form-section-group" id="section-meta">
+                                <h3 class="form-section-title">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon text-gradient" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                    </svg>
+                                    Metadados do Artigo (♥)
+                                </h3>
+                                <div class="form-section-body">
+                                    <!-- Título e Slug -->
+                                    <div class="form-row split">
+                                        <div class="form-group">
+                                            <label for="title">Título do Artigo <span class="required">*</span></label>
+                                            <input type="text" id="title" placeholder="Ex: Como Escolher o Melhor Teclado Mecânico" required autocomplete="off">
+                                        </div>
+                                        <div class="form-group">
+                                             <label for="slug">Slug / URL Amigável (Opcional)</label>
+                                             <input type="text" id="slug" placeholder="Ex: melhor-teclado-mecanico" autocomplete="off">
+                                             <small id="slug-check-msg" class="helper-text hidden" style="display: block; margin-top: 0.25rem; font-size: 0.8rem;"></small>
+                                         </div>
+                                    </div>
+
+                                    <!-- Categorias e Tags -->
+                                    <div class="form-row split mt-1">
+                                        <div class="form-group">
+                                            <label for="categories">Categoria <span class="required">*</span></label>
+                                            <div class="category-select-wrapper">
+                                                <select id="categories" class="select-premium">
+                                                    <option value="">Carregando categorias...</option>
+                                                </select>
+                                                <!-- Container de skeleton loaders para a carga das categorias -->
+                                                <div class="skeleton-container hidden" id="categories-skeleton">
+                                                    <div class="skeleton skeleton-input"></div>
+                                                </div>
+                                                <input type="text" id="categories_manual" class="hidden" placeholder="Digite a categoria manualmente..." autocomplete="off">
+                                            </div>
+                                            <span class="field-tip" id="categories-tip">Selecione uma categoria do WordPress cadastrada no seu site.</span>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="tags">Tags (Separadas por vírgula)</label>
+                                            <input type="text" id="tags" placeholder="Ex: tecnologia, setup, teclados" autocomplete="off">
+                                            <span class="field-tip">Tags novas serão criadas automaticamente no WordPress se não existirem.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SEÇÃO 2: CONTEÚDO HTML -->
+                            <div class="form-section-group" id="section-editor">
+                                <h3 class="form-section-title">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon text-gradient" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M12 2L2 12l10 10 10-10L12 2z"/>
+                                    </svg>
+                                    Editor de Conteúdo HTML (♦)
+                                </h3>
+                                <div class="form-section-body">
+                                    <!-- Barra de cópia rápida de configurações anteriores -->
+                                    <div class="copy-prev-config-bar hidden" id="copy-prev-config-bar">
+                                        <div class="copy-bar-info">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon text-gradient" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                                            </svg>
+                                            <span>Deseja usar as mesmas configurações (Categoria, Tags e SEO) do artigo anterior?</span>
+                                        </div>
+                                        <button type="button" class="btn-copy-prev" id="btn-copy-prev-config">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                            Copiar Configurações
+                                        </button>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="label-with-action">
+                                            <label for="content">Conteúdo em HTML Bruto</label>
+                                            <span class="action-hint" id="format-html-btn">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+                                                </svg>
+                                                HTML Mode
+                                            </span>
+                                        </div>
+                                        <textarea id="content" placeholder="Cole aqui o código HTML completo do seu artigo..." class="code-font"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SEÇÃO 3: METADADOS YOAST SEO -->
+                            <div class="form-section-group" id="section-seo">
+                                <h3 class="form-section-title">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon text-gradient" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M12 8.5a3 3 0 1 0-3-3a3.5 3.5 0 0 0 .5 1.8a3 3 0 1 0-2.5 4.7a3.5 3.5 0 0 0 1.8-.5a3 3 0 1 0 6.4 0a3.5 3.5 0 0 0 1.8.5a3 3 0 1 0-2.5-4.7a3.5 3.5 0 0 0 .5-1.8a3 3 0 1 0-3 3zm1.5 6.5h-3l-1.5 4h6l-1.5-4z"/>
+                                    </svg>
+                                    Otimização Yoast SEO (♣)
+                                </h3>
+                                <div class="form-section-body">
+                                    <div class="form-row split">
+                                        <div class="form-group">
+                                            <label for="focus_keyword">Palavra-Chave Foco</label>
+                                            <input type="text" id="focus_keyword" placeholder="Ex: teclado mecanico" autocomplete="off">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <div class="label-with-counter">
+                                                <label for="meta_description">Meta Descrição</label>
+                                                <span class="char-counter" id="meta-counter">0 / 160</span>
+                                            </div>
+                                            <input type="text" id="meta_description" placeholder="Ex: Descubra como escolher o teclado mecânico ideal..." autocomplete="off">
+                                            <div class="progress-bar-container">
+                                                <div class="progress-bar" id="meta-progress"></div>
+                                            </div>
+                                            <span class="field-tip" id="meta-tip">Comprimento recomendado: 120-160 caracteres.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SEÇÃO 4: AGENDAMENTO E STATUS -->
+                            <div class="form-section-group" id="section-schedule">
+                                <h3 class="form-section-title">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon text-gradient" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M12 2C9.5 7 5.5 8 5.5 11.5c0 3 2.5 4.5 4.5 4.5c.8 0 1.5-.2 2-.5c.5.3 1.2.5 2 .5c2 0 4.5-1.5 4.5-4.5C18.5 8 14.5 7 12 2zm1.5 15h-3l-1.5 4h6l-1.5-4z"/>
+                                    </svg>
+                                    Status e Agendamento (♠)
+                                </h3>
+                                <div class="form-section-body">
+                                    <div class="form-row split">
+                                        <div class="form-group">
+                                            <label for="post_status">Status do Artigo</label>
+                                            <select id="post_status" class="select-premium">
+                                                <option value="publish_schedule">Publicar ou Agendar</option>
+                                                <option value="draft" selected>Salvar como Rascunho (Draft - Padrão)</option>
+                                            </select>
+                                            <span class="field-tip">Selecione se deseja enviar diretamente ou salvar como rascunho.</span>
+                                        </div>
+                                        <div class="form-group" id="schedule-group">
+                                            <label for="schedule_datetime"><svg xmlns="http://www.w3.org/2000/svg" class="svg-icon align-middle" style="height:1.1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Data e Hora de Agendamento (Opcional)</label>
+                                            <input type="datetime-local" id="schedule_datetime">
+                                            <span class="field-tip" id="schedule-tip">Deixe em branco para publicar imediatamente.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div> <!-- Fim de #single-mode-content -->
+
+                    <!-- ABA 2: PLANEJADOR EM LOTE -->
+                    <div class="tab-content hidden" id="bulk-mode-content">
+                        <div class="bulk-form">
+                            <p class="bulk-description">Agende múltiplos artigos de uma vez! Insira uma lista de títulos e uma lista correspondente de horários, selecione a data base e carregue-os na fila assistida.</p>
+                            
+                            <!-- Linha de Textareas Lado a Lado -->
+                            <div class="form-row split">
+                                <div class="form-group">
+                                    <div class="label-with-counter">
+                                        <label for="bulk-titles">Lista de Títulos (Um por linha)</label>
+                                        <span class="counter-badge" id="bulk-titles-counter">0 títulos</span>
+                                    </div>
+                                    <textarea id="bulk-titles" class="bulk-textarea" placeholder="Cole aqui os títulos dos artigos (um por linha)...&#10;Ex: O truque de colocar uma folha de louro na máquina&#10;Ex: Por que você nunca deve guardar tomates na geladeira"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <div class="label-with-counter">
+                                        <label for="bulk-times">Horários (Um por linha, formato HH:MM)</label>
+                                        <span class="counter-badge" id="bulk-times-counter">0 horários</span>
+                                    </div>
+                                    <textarea id="bulk-times" class="bulk-textarea code-font" placeholder="Cole aqui os horários (um por linha)...&#10;Ex: 22:15&#10;Ex: 13:15"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Data Base e Validador de Consistência -->
+                            <div class="form-row split align-center">
+                                <div class="form-group">
+                                    <label for="bulk-base-date">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon align-middle" style="height:1.1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                        Data Base de Agendamento
+                                    </label>
+                                    <input type="date" id="bulk-base-date">
+                                    <span class="field-tip">Os horários serão agendados a partir desta data.</span>
+                                </div>
+                                <div class="form-group">
+                                    <label>Status de Consistência</label>
+                                    <div class="consistency-status-panel" id="consistency-badge">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                                        </svg>
+                                        Cole títulos e horários para validar.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Visual Preview List de Mapeamento -->
+                            <div class="form-group">
+                                <label>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon align-middle" style="height:1.1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    Visualização do Mapeamento de Fila
+                                </label>
+                                <div class="bulk-preview-container">
+                                    <div class="bulk-preview-list" id="bulk-preview-list">
+                                        <div class="preview-empty-msg">Nenhum título mapeado ainda. Insira títulos e horários acima.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botões de Ação do Lote -->
+                            <div class="button-grid bulk-actions">
+                                <button type="button" class="btn btn-primary" id="btn-bulk-load-wizard" disabled style="width: 100%;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/>
+                                    </svg>
+                                    Carregar Fila no Assistente
+                                </button>
+                            </div>
+                        </div>
+                    </div> <!-- Fim de #bulk-mode-content -->
+
+                    <!-- ABA 3: UPLOAD DE MÍDIAS EM LOTE -->
+                    <div class="tab-content hidden" id="media-mode-content">
+                        <div class="media-batch-wrapper">
+                            <h3 class="form-section-title">
+                                <span style="color: var(--color-primary); font-size: 1.25rem; margin-right: 0.25rem;">♣</span>
+                                Upload de Imagens em Lote
+                            </h3>
+                            
+                            <div class="form-row split">
+                                <div class="form-group">
+                                    <label for="media-batch-size">Tamanho do Lote (Imagens por Grupo)</label>
+                                    <div class="stepper-container">
+                                        <button type="button" class="btn-stepper" id="btn-stepper-minus">−</button>
+                                        <input type="number" id="media-batch-size" min="1" max="20" value="3" class="input-stepper" readonly>
+                                        <button type="button" class="btn-stepper" id="btn-stepper-plus">+</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Controles Globais de Legenda</label>
+                                    <div class="media-global-controls-row" style="display: flex; gap: 0.5rem; width: 100%;">
+                                        <button type="button" class="btn btn-secondary w-full" id="btn-media-indiv-captions" style="height: 2.85rem; font-size: 0.725rem; padding: 0 0.25rem;" title="Definir todos os lotes como Legendas Individuais">Individuais</button>
+                                        <button type="button" class="btn btn-secondary w-full" id="btn-media-bulk-captions" style="height: 2.85rem; font-size: 0.725rem; padding: 0 0.25rem;" title="Definir todos os lotes como Legenda em Massa">Em Massa</button>
+                                        <button type="button" class="btn btn-secondary w-full" id="btn-media-equal-captions" style="height: 2.85rem; font-size: 0.725rem; padding: 0 0.25rem;" title="Definir todos os lotes como Legendas Iguais">Iguais</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group mt-1">
+                                <div class="switch-wrapper">
+                                    <label class="switch-label" for="media-ai-credits">
+                                        Marcar legendas com: <strong style="color: var(--color-primary);">"Imagem gerada por IA"</strong>
+                                    </label>
+                                    <label class="switch-premium">
+                                        <input type="checkbox" id="media-ai-credits" checked>
+                                        <span class="slider-premium"></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group mt-1">
+                                <label>Upload das Imagens (Arraste ou Selecione)</label>
+                                <div class="media-drag-zone" id="media-drag-zone">
+                                    <input type="file" id="media-files-input" multiple accept="image/*" class="hidden">
+                                    <div class="drag-zone-content">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" style="width: 2.5rem; height: 2.5rem; color: var(--color-primary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                                            <polyline points="21 15 16 10 5 21"/>
+                                        </svg>
+                                        <p>Arraste suas imagens aqui ou <span class="highlight">clique para procurar</span></p>
+                                        <small>Formatos aceitos: JPG, PNG, GIF, WEBP</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bloco de Títulos em Massa -->
+                            <div class="form-group mt-1 hidden" id="media-bulk-titles-container">
+                                <label for="media-bulk-titles">Títulos em Massa (Um por linha)</label>
+                                <textarea id="media-bulk-titles" class="input-premium" placeholder="Cole aqui os títulos dos lotes (um por linha)...&#10;Ex: Título do Lote 1&#10;Ex: Título do Lote 2" style="height: 100px; resize: vertical;"></textarea>
+                            </div>
+
+                            <!-- Feed de Lotes Gerados Dinamicamente -->
+                            <div class="lotes-midia-container mt-2">
+                                <!-- Barra de Paginação Carrossel -->
+                                <div class="media-carousel-nav hidden" id="media-carousel-nav">
+                                    <button type="button" class="btn btn-secondary" id="btn-media-carousel-prev" title="Lote Anterior">← Anterior</button>
+                                    <span id="media-carousel-indicator">Lote 1 de 1</span>
+                                    <button type="button" class="btn btn-secondary" id="btn-media-carousel-next" title="Próximo Lote">Próximo →</button>
+                                </div>
+                                <h4 class="sub-section-title" id="title-lotes-gerados" style="display: none; margin-bottom: 0.75rem;">Lotes de Mídias Preparados</h4>
+                                <div id="lotes-midia-feed" class="lotes-midia-feed">
+                                    <!-- Renderizado via JavaScript -->
+                                </div>
+                            </div>
+
+                            <!-- Ação de Enviar Mídias (Aparece se houver lotes) -->
+                            <div class="form-actions mt-2" id="media-actions-bar" style="display: none;">
+                                <button type="button" class="btn btn-primary w-full" id="btn-upload-media-wp">
+                                    <span class="btn-text">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon align-middle mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                                        </svg>
+                                        Enviar Mídias ao WordPress
+                                    </span>
+                                    <span class="spinner hidden">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon svg-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+                                            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                                            <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+                                            <line x1="6.34" y1="17.66" x2="9.17" y2="14.83"/><line x1="14.83" y1="9.17" x2="17.66" y2="6.34"/>
+                                        </svg>
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                </section>
+
+                <!-- Coluna da Direita: Abas de Console e Live Preview, mais Ações -->
+                <section class="action-section">
+                    <!-- Painel de Ações Rápidas -->
+                    <div class="action-card card">
+                        <div class="action-card-header">
+                            <h2>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon text-gradient" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                                    <polyline points="2 17 12 22 22 17"/>
+                                    <polyline points="2 12 12 17 22 12"/>
+                                </svg>
+                                Central de Ações
+                            </h2>
+                        </div>
+                        <div class="button-grid">
+                            <input type="file" id="input-import-json" accept=".json" class="hidden">
+                            <button type="button" class="btn btn-secondary" id="btn-import-json" title="Importar artigo de um arquivo JSON">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
+                                </svg>
+                                Importar JSON
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="btn-export-json" title="Exportar artigo preenchido como arquivo JSON">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="12" y1="12" x2="12" y2="18"/><polyline points="15 15 12 12 9 15"/>
+                                </svg>
+                                Exportar JSON
+                            </button>
+                            <button type="button" class="btn btn-primary" id="btn-publish-wp">
+                                <span class="btn-text">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon align-middle mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20.88 18.04A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/>
+                                        <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+                                    </svg>
+                                    Push
+                                </span>
+                                <span class="spinner hidden">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon svg-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+                                        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                                        <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+                                        <line x1="6.34" y1="17.66" x2="9.17" y2="14.83"/><line x1="14.83" y1="9.17" x2="17.66" y2="6.34"/>
+                                    </svg>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dual Panel Abas: Console & Live Preview -->
+                    <div class="card right-panel-card">
+                        <div class="right-panel-header">
+                            <div class="tabs-nav right-tabs">
+                                <button type="button" class="tab-btn active" data-tab="right-console">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+                                    </svg>
+                                    Console
+                                </button>
+                                <button type="button" class="tab-btn" data-tab="right-preview" id="tab-btn-preview">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    Visualizar Artigo
+                                </button>
+                                <button type="button" class="tab-btn" data-tab="right-links" id="tab-btn-links">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                    </svg>
+                                    Links Gerados
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Conteúdo da Direita: CONSOLE -->
+                        <div class="tab-content" id="right-console-content">
+                            <div class="console-body-wrapper">
+                                <div class="console-action-bar">
+                                    <span>Logs de Execução</span>
+                                    <button class="clear-btn" id="btn-clear-console">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                                        </svg>
+                                        Limpar
+                                    </button>
+                                </div>
+                                <div class="console-body" id="console-output">
+                                    <div class="console-line system"><span class="time">[00:00:00]</span> Painel inicializado com sucesso. Aguardando ações...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conteúdo da Direita: LIVE HTML PREVIEW -->
+                        <div class="tab-content hidden" id="right-preview-content">
+                            <div class="preview-body-wrapper" id="preview-body-wrapper">
+                                <div class="preview-action-bar">
+                                    <span>Visualização em Tempo Real</span>
+                                    <button class="expand-btn" id="btn-maximize-preview" title="Maximizar Visualização">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M15 3h6v6"/>
+                                            <path d="M9 21H3v-6"/>
+                                            <line x1="21" y1="3" x2="14" y2="10"/>
+                                            <line x1="3" y1="21" x2="10" y2="14"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="preview-container" id="live-preview-container">
+                                    <div class="preview-empty-state" id="live-preview-empty">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" style="height: 3rem; width: 3rem; margin-bottom: 1rem; color: var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                                            <polyline points="14 2 14 8 20 8"/>
+                                            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                                        </svg>
+                                        Digite algo no editor de conteúdo HTML para ver a mágica acontecer aqui...
+                                    </div>
+                                    <div class="live-preview-content hidden" id="live-preview-content"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conteúdo da Direita: LINKS GERADOS -->
+                        <div class="tab-content hidden" id="right-links-content">
+                            <div class="links-body-wrapper">
+                                <div class="links-action-bar">
+                                    <span>Links de Edição do WordPress</span>
+                                    <div style="display: flex; gap: 0.75rem;">
+                                        <button class="clear-btn" id="btn-copy-all-links" style="color: var(--color-primary);" title="Copiar todos os links gerados">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                            Copiar Todos
+                                        </button>
+                                        <button class="clear-btn" id="btn-clear-links">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                                            </svg>
+                                            Limpar Histórico
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="links-container" id="generated-links-list">
+                                    <div class="links-empty-state" id="links-empty-state">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" style="height: 3rem; width: 3rem; margin-bottom: 1rem; color: var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                        </svg>
+                                        Nenhum link gerado nesta sessão. Os links de edição dos artigos gerados serão listados aqui.
+                                    </div>
+                                    <div class="links-feed hidden" id="links-feed"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Configurações das Credenciais -->
+    <div class="modal-overlay hidden" id="settings-modal">
+        <div class="modal-container card">
+            <div class="modal-header card-header">
+                <h2>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon text-gradient" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    Configurações do WordPress
+                </h2>
+                <button class="modal-close" id="btn-close-settings-header" title="Fechar">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <p class="modal-description">Insira as credenciais do seu WordPress. Elas serão salvas localmente com segurança no arquivo <code>.env</code> do seu projeto.</p>
+                
+                <div class="modal-form">
+                    <div class="form-group">
+                        <label for="settings-wp-url">URL do WordPress <span class="required">*</span></label>
+                        <input type="text" id="settings-wp-url" placeholder="Ex: https://meusite.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="settings-wp-user">Usuário <span class="required">*</span></label>
+                        <input type="text" id="settings-wp-user" placeholder="Ex: admin">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="settings-wp-password">Senha de Aplicativo (Application Password) <span class="required">*</span></label>
+                        <input type="text" id="settings-wp-password" placeholder="Ex: xxxx xxxx xxxx xxxx xxxx">
+                        <span class="field-tip">Gere essa senha no painel do WordPress em: Usuários > Perfil > Senhas de Aplicativo.</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <div class="modal-status-msg" id="settings-status-msg"></div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" id="btn-test-settings">
+                        <span class="btn-text">Testar Conexão</span>
+                        <span class="spinner hidden">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon svg-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+                                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                                <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+                                <line x1="6.34" y1="17.66" x2="9.17" y2="14.83"/><line x1="14.83" y1="9.17" x2="17.66" y2="6.34"/>
+                            </svg>
+                        </span>
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btn-save-settings">Salvar Credenciais</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Global para Toasts Flutuantes -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Modal do Termo de Compromisso e Responsabilidade (Bloqueante) -->
+    <div class="terms-modal-overlay hidden" id="terms-modal">
+        <div class="terms-modal-container">
+            <div class="terms-modal-header">
+                <span class="logo-suit">♠</span>
+                <h2>Termo de Compromisso e Responsabilidade</h2>
+            </div>
+            <div class="terms-content-box" id="terms-content-box">
+                <div class="terms-alert-box">
+                    <strong>Atenção:</strong> Ao utilizar este aplicativo, você assume total responsabilidade pelo conteúdo e formato dos artigos enviados e publicados no seu WordPress.
+                </div>
+                
+                <p class="terms-clause-text">
+                    Este Termo de Compromisso e Responsabilidade ("Termo") define as condições sob as quais você ("Usuário") utiliza                 <div class="terms-clause-title">1. Obrigatoriedade Crucial de Revisão Editorial Humana</div>
+                <p class="terms-clause-text">
+                    <strong>O Usuário compromete-se formalmente a revisar pessoalmente cada artigo, imagem e metadado gerados por ferramentas ou colados na área de transferência antes de disparar o comando de publicação técnica ("Push").</strong> O Usuário concorda que a automação e a agilidade proporcionadas pelo aplicativo não substituem o crivo de um editor humano e que erros de conteúdo publicados sem prévia revisão editorial humana são de responsabilidade exclusiva do Usuário, não cabendo qualquer alegação de culpa ou defeito no sistema do Aplicativo.
+                </p>
+
+                <div class="terms-clause-title">2. Inexistência de Vínculo Trabalhista, Comercial ou Parcerias</div>
+                <p class="terms-clause-text">
+                    O uso deste Aplicativo de execução estritamente local não estabelece qualquer forma de sociedade, mandato, associação, agenciamento, consórcio, joint-venture ou relação de trabalho entre o Usuário e os Desenvolvedores. Trata-se unicamente de licenciamento gratuito de ferramenta de software para uso em ambiente privado do próprio Usuário.
+                </p>
+
+                <div class="terms-clause-title">3. Segurança, Propriedade das Credenciais e Dados do WordPress</div>
+                <p class="terms-clause-text">
+                    O Aplicativo funciona localmente e salva chaves de API e credenciais do WordPress em arquivo <code>.env</code> na máquina física do Usuário. O Usuário é o único responsável por resguardar o acesso a tais credenciais e chaves contra perdas ou acessos não autorizados de terceiros no seu próprio ambiente de execução. Os desenvolvedores não possuem acesso remoto e não se responsabilizam por invasões resultantes de falhas de segurança no computador do Usuário.
+                </p>
+
+                <div class="terms-clause-title">4. Rol de Erros Mapeados de Responsabilidade do Usuário</div>
+                <p class="terms-clause-text">
+                    Fica expressamente acordado que quaisquer problemas decorrentes dos seguintes cenários são de responsabilidade do Usuário, isentando totalmente o Aplicativo e seus desenvolvedores de qualquer obrigação ou suporte:
+                </p>
+                <ul class="terms-clause-list">
+                    <li><strong>Erros de Tradução, Gramática ou Coerência:</strong> Conteúdos gerados por ferramentas de inteligência artificial ou colados sem revisão editorial humana que contenham informações incorretas, ofensivas, difamatórias ou sem coerência linguística.</li>
+                    <li><strong>Formatação HTML Quebrada:</strong> Códigos HTML órfãos, tags desalinhadas, tabelas desconfiguradas, vetores SVG inline corrompidos ou links incorretos que quebrem a estrutura visual (layout) do site de destino.</li>
+                    <li><strong>Limites de API (Rate Limits) e Quedas de Rede:</strong> Bloqueios temporários ou definitivos impostos pelo servidor de hospedagem do Usuário ou pela API REST do WordPress por volume excessivo de uploads.</li>
+                    <li><strong>Agendamentos Incorretos (Timezones):</strong> Publicação de postagens em datas/horários divergentes por incompatibilidade de fuso horário local e remoto.</li>
+                    <li><strong>Publicações Duplicadas:</strong> Envio em dobro ou triplo de posts causados por cliques repetidos ou timeouts de conexão não aguardados pelo Usuário.</li>
+                    <li><strong>Perda ou Corrupção de Arquivos JSON:</strong> Falhas na manipulação de arquivos de importação/exportação locais criados pelo próprio Usuário.</li>
+                </ul>
+
+                <div class="terms-clause-title">5. Compatibilidade e Atualizações de Sistemas de Terceiros</div>
+                <p class="terms-clause-text">
+                    Dado que o WordPress e os plugins associados (como o Yoast SEO) sofrem constantes atualização, os desenvolvedores não garantem a compatibilidade eterna ou imediata do Aplicativo com novas versões lançadas por terceiros. É responsabilidade do Usuário gerenciar e testar as atualizações em ambiente seguro e de homologação.
+                </p>
+
+                <div class="terms-clause-title">6. Isenção Geral de Responsabilidade e Conceito "Como Está"</div>
+                <p class="terms-clause-text">
+                    O Hisoka Push V2 é fornecido "como está" e "conforme disponível". Os desenvolvedores não oferecem garantias de que o software funcionará sem interrupções ou totalmente livre de erros. Em nenhuma hipótese os desenvolvedores serão responsáveis por quaisquer danos diretos, indiretos, incidentais ou comerciais (incluindo perda de receita, penalidades de SEO no Google, desindexação ou perda de banco de dados).
+                </p>
+
+                <div class="terms-clause-title">7. Limitações de Suporte e SLA</div>
+                <p class="terms-clause-text">
+                    Os desenvolvedores reservam-se o direito de atualizar o código, alterar a interface ou descontinuar recursos a qualquer momento, sem necessidade de aviso prévio e sem obrigação de prestar suporte técnico individualizado ou sob níveis de serviço (SLA).
+                </p>
+                
+                <p class="terms-clause-text" style="font-weight: 600; margin-top: 1rem;">
+                    Role até o final deste texto para liberar o aceite e prosseguir para o painel.
+                </p>
+            </div>
+            
+            <div class="terms-modal-footer">
+                <label class="terms-agreement-row" for="terms-checkbox">
+                    <div class="terms-checkbox-premium">
+                        <input type="checkbox" id="terms-checkbox">
+                    </div>
+                    <span class="terms-agreement-label">
+                        Declaro que <strong>li, compreendi e aceito</strong> todas as cláusulas do Termo de Compromisso e que sou o único responsável pelos artigos publicados.
+                    </span>
+                </label>
+                
+                <div class="terms-buttons-row">
+                    <button type="button" class="btn btn-secondary btn-terms btn-terms-download" id="btn-download-terms-pdf">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Baixar PDF
+                    </button>
+                    <button type="button" class="btn btn-primary btn-terms" id="btn-accept-terms" disabled>
+                        Aceitar e Prosseguir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts da aplicação -->
+    <script src="{{ url_for('static', filename='js/principal.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/termos.js') }}"></script>
+</body>
+</html>
