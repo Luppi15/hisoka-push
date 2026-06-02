@@ -195,19 +195,30 @@ def converter_para_gutenberg(html):
     Converte HTML puro em blocos Gutenberg do WordPress.
     Garante que NENHUM conteúdo fique 'solto' (sem wrapper de bloco),
     evitando completamente o aviso de 'Converter para blocos' no editor.
+    Preserva qualquer bloco Gutenberg existente (ex: <!-- wp:html -->...<!-- /wp:html -->) intacto.
     """
     if not html:
         return ""
-        
-    # Se já tiver comentários de blocos Gutenberg, não processa
-    if "<!-- wp:" in html:
-        return html
 
-    # Remover comentários HTML genéricos que NÃO são blocos Gutenberg,
-    # pois o parser os trata como conteúdo "solto" / Classic Block
-    html = re.sub(r'<!--(?!\s*/?wp:).*?-->', '', html, flags=re.DOTALL)
+    # Expressão regular para encontrar blocos Gutenberg existentes (com ou sem conteúdo)
+    gutenberg_pattern = re.compile(
+        r'<!--\s*wp:(?P<name>[\w\-]+(?:/[\w\-]+)?)(?:\s+[^>]*)?-->.*?<!--\s*/wp:(?P=name)\s*-->|'
+        r'<!--\s*wp:[\w\-]+(?:/[\w\-]+)?(?:\s+[^>]*)?/-->',
+        re.DOTALL
+    )
 
-    # Mapa de tags block-level para seus wrappers Gutenberg
+    # Segmentar o HTML em partes preservadas (blocos Gutenberg existentes) e partes comuns (HTML puro)
+    segmentos = []
+    last_idx = 0
+    for match in gutenberg_pattern.finditer(html):
+        start, end = match.span()
+        if start > last_idx:
+            segmentos.append((html[last_idx:start], False))
+        segmentos.append((html[start:end], True))
+        last_idx = end
+    if last_idx < len(html):
+        segmentos.append((html[last_idx:], False))
+
     BLOCK_MAP = {
         'p':          ('<!-- wp:paragraph -->', '<!-- /wp:paragraph -->'),
         'h1':         ('<!-- wp:heading {"level":1} -->', '<!-- /wp:heading -->'),
@@ -225,10 +236,6 @@ def converter_para_gutenberg(html):
         'hr':         (None, None),  # Self-closing
     }
 
-    # Regex que captura TODOS os elementos block-level.
-    # Container tags (blockquote, table, figure, ul, ol, div) são tratados
-    # individualmente para evitar que tags internas (ex: <p> dentro de <blockquote>)
-    # interrompam a captura prematuramente.
     block_pattern = re.compile(
         r'(<blockquote(?:\s[^>]*)?>.*?</blockquote>|'
         r'<table(?:\s[^>]*)?>.*?</table>|'
@@ -245,62 +252,62 @@ def converter_para_gutenberg(html):
         flags=re.IGNORECASE | re.DOTALL
     )
 
-    # Dividir o HTML em segmentos: [texto_solto, bloco_html, texto_solto, bloco_html, ...]
-    partes = block_pattern.split(html)
     blocos_resultado = []
 
-    for parte in partes:
-        if not parte:
-            continue
-
-        parte_strip = parte.strip()
-        if not parte_strip:
-            continue
-
-        # Verificar se é um bloco reconhecido
-        match_tag = re.match(r'^<(\w+)[\s>]', parte_strip, re.IGNORECASE)
-
-        if match_tag:
-            tag = match_tag.group(1).lower()
-
-            # <hr> → self-closing separator
-            if tag == 'hr':
-                blocos_resultado.append('<!-- wp:separator -->\n<hr class="wp-block-separator has-alpha-channel-opacity"/>\n<!-- /wp:separator -->')
-                continue
-
-            # <img> soltas (não dentro de figure) → wp:image com figure wrapper
-            if tag == 'img':
-                blocos_resultado.append(
-                    f'<!-- wp:image -->\n<figure class="wp-block-image">{parte_strip}</figure>\n<!-- /wp:image -->'
-                )
-                continue
-
-            # <iframe> → wp:html
-            if tag == 'iframe':
-                blocos_resultado.append(f'<!-- wp:html -->\n{parte_strip}\n<!-- /wp:html -->')
-                continue
-
-            # <div> → wp:group
-            if tag == 'div':
-                blocos_resultado.append(f'<!-- wp:group -->\n{parte_strip}\n<!-- /wp:group -->')
-                continue
-
-            # Tags mapeadas no BLOCK_MAP
-            if tag in BLOCK_MAP:
-                opener, closer = BLOCK_MAP[tag]
-                blocos_resultado.append(f'{opener}\n{parte_strip}\n{closer}')
-                continue
-
-        # Qualquer conteúdo que sobrou e NÃO é um bloco reconhecido
-        # → envolver como parágrafo se for texto puro, ou wp:html se contiver tags
-        if re.search(r'<[^>]+>', parte_strip):
-            # Contém HTML → Custom HTML block
-            blocos_resultado.append(f'<!-- wp:html -->\n{parte_strip}\n<!-- /wp:html -->')
+    for conteudo, eh_preservado in segmentos:
+        if eh_preservado:
+            # Preservar o bloco Gutenberg existente exatamente como está
+            blocos_resultado.append(conteudo.strip())
         else:
-            # Texto puro → parágrafo
-            blocos_resultado.append(f'<!-- wp:paragraph -->\n<p>{parte_strip}</p>\n<!-- /wp:paragraph -->')
+            # Processar o HTML padrão para envelopar em blocos
+            # Remover comentários HTML genéricos que NÃO são blocos Gutenberg
+            conteudo_limpo = re.sub(r'<!--(?!\s*/?wp:).*?-->', '', conteudo, flags=re.DOTALL)
+            
+            # Dividir em blocos HTML
+            partes = block_pattern.split(conteudo_limpo)
+            for parte in partes:
+                if not parte:
+                    continue
 
-    # Juntar blocos com dupla quebra de linha (exigência do parser Gutenberg)
+                parte_strip = parte.strip()
+                if not parte_strip:
+                    continue
+
+                # Verificar se é um bloco reconhecido
+                match_tag = re.match(r'^<(\w+)[\s>]', parte_strip, re.IGNORECASE)
+
+                if match_tag:
+                    tag = match_tag.group(1).lower()
+
+                    if tag == 'hr':
+                        blocos_resultado.append('<!-- wp:separator -->\n<hr class="wp-block-separator has-alpha-channel-opacity"/>\n<!-- /wp:separator -->')
+                        continue
+
+                    if tag == 'img':
+                        blocos_resultado.append(
+                            f'<!-- wp:image -->\n<figure class="wp-block-image">{parte_strip}</figure>\n<!-- /wp:image -->'
+                        )
+                        continue
+
+                    if tag == 'iframe':
+                        blocos_resultado.append(f'<!-- wp:html -->\n{parte_strip}\n<!-- /wp:html -->')
+                        continue
+
+                    if tag == 'div':
+                        blocos_resultado.append(f'<!-- wp:group -->\n{parte_strip}\n<!-- /wp:group -->')
+                        continue
+
+                    if tag in BLOCK_MAP:
+                        opener, closer = BLOCK_MAP[tag]
+                        blocos_resultado.append(f'{opener}\n{parte_strip}\n{closer}')
+                        continue
+
+                # Qualquer conteúdo que sobrou e não é bloco reconhecido
+                if re.search(r'<[^>]+>', parte_strip):
+                    blocos_resultado.append(f'<!-- wp:html -->\n{parte_strip}\n<!-- /wp:html -->')
+                else:
+                    blocos_resultado.append(f'<!-- wp:paragraph -->\n<p>{parte_strip}</p>\n<!-- /wp:paragraph -->')
+
     return '\n\n'.join(blocos_resultado)
 
 def cadastrar_post(dados):

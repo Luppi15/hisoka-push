@@ -1,4 +1,6 @@
 import logging
+import sys
+import os
 from flask import Flask
 import configuracao
 from rotas.geral import bp_geral
@@ -8,9 +10,6 @@ from rotas.categorias import bp_categorias
 
 # Configuração de logging profissional
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-import sys
-import os
 
 # Determinar os caminhos de templates e estáticos (compatível com PyInstaller)
 if getattr(sys, 'frozen', False):

@@ -14,28 +14,25 @@ class Program
         Console.WriteLine("===================================================");
         Console.ResetColor();
 
-        string currentDir = AppDomain.CurrentDomain.BaseDirectory;
-        string rootDir = currentDir;
-
-        // Verificar se estamos executando de dentro da pasta 'dist'
-        string parentDir = Path.GetFullPath(Path.Combine(currentDir, ".."));
-        
+        string rootDir = AppDomain.CurrentDomain.BaseDirectory;
         string pythonPath = Path.Combine(rootDir, ".venv", "Scripts", "python.exe");
         string appScript = Path.Combine(rootDir, "app.py");
 
+        // Validar caminhos e tentar diretório pai se necessário (retrocompatibilidade)
         if (!File.Exists(pythonPath) || !File.Exists(appScript))
         {
-            // Tenta no diretório pai
-            if (File.Exists(Path.Combine(parentDir, ".venv", "Scripts", "python.exe")) && 
-                File.Exists(Path.Combine(parentDir, "app.py")))
+            string parentDir = Path.GetFullPath(Path.Combine(rootDir, ".."));
+            string parentPython = Path.Combine(parentDir, ".venv", "Scripts", "python.exe");
+            string parentScript = Path.Combine(parentDir, "app.py");
+
+            if (File.Exists(parentPython) && File.Exists(parentScript))
             {
                 rootDir = parentDir;
-                pythonPath = Path.Combine(rootDir, ".venv", "Scripts", "python.exe");
-                appScript = Path.Combine(rootDir, "app.py");
+                pythonPath = parentPython;
+                appScript = parentScript;
             }
         }
 
-        // Validar caminhos
         if (!File.Exists(pythonPath))
         {
             Console.ForegroundColor = ConsoleColor.Red;
@@ -165,8 +162,83 @@ class Program
         Console.WriteLine("\n[INFO] Servidor Hisoka foi encerrado.");
     }
 
+    static string GetChromiumPath()
+    {
+        // 1. Procurar Microsoft Edge no Registro do Windows
+        try
+        {
+            using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\msedge.exe"))
+            {
+                if (key != null)
+                {
+                    string path = key.GetValue("") as string;
+                    if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                        return path;
+                }
+            }
+        }
+        catch {}
+
+        // 2. Procurar Google Chrome no Registro do Windows
+        try
+        {
+            using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe"))
+            {
+                if (key != null)
+                {
+                    string path = key.GetValue("") as string;
+                    if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                        return path;
+                }
+            }
+        }
+        catch {}
+
+        // 3. Fallbacks para locais padrão do Edge
+        string[] edgePaths = new string[] {
+            @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+            @"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\Edge\Application\msedge.exe")
+        };
+        foreach (string path in edgePaths)
+        {
+            if (File.Exists(path)) return path;
+        }
+
+        // 4. Fallbacks para locais padrão do Chrome
+        string[] chromePaths = new string[] {
+            @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            @"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Google\Chrome\Application\chrome.exe")
+        };
+        foreach (string path in chromePaths)
+        {
+            if (File.Exists(path)) return path;
+        }
+
+        return null;
+    }
+
     static void OpenBrowser(string url)
     {
+        string chromiumPath = GetChromiumPath();
+        if (chromiumPath != null)
+        {
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.WriteLine("\n[Launcher] Iniciando o Hisoka Push V2 em modo Aplicativo...");
+            Console.ResetColor();
+            try
+            {
+                Process.Start(new ProcessStartInfo(chromiumPath, "--app=\"" + url + "\"") { UseShellExecute = false });
+                return;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("[Aviso] Erro ao iniciar em modo App: " + ex.Message);
+            }
+        }
+
+        // Fallback se não encontrar Chromium
         Console.ForegroundColor = ConsoleColor.Magenta;
         Console.WriteLine("\n[Launcher] Abrindo o painel do Hisoka no seu navegador padrão...");
         Console.ResetColor();

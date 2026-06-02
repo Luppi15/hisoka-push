@@ -11,9 +11,8 @@ if not exist ".venv" (
     exit /b 1
 )
 
-echo [1/3] Compilando o Launcher C# nativo...
-if not exist "dist" mkdir "dist"
-C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /out:dist\Hisoka.exe launcher.cs
+echo [1/2] Compilando o Launcher C# nativo...
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /out:Hisoka.exe launcher.cs
 
 if %errorlevel% neq 0 (
     echo [ERRO] A compilacao do C# falhou!
@@ -21,26 +20,21 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [2/3] Configurando ambiente na pasta dist...
-if not exist "dist" mkdir "dist"
-
-:: Copiar .env ou .env.example para a pasta dist se dist\.env nao existir
-if not exist "dist\.env" if exist ".env" (
-    echo Copiando o arquivo .env atual para a pasta dist...
-    copy ".env" "dist\.env" > nul
-)
-if not exist "dist\.env" if not exist ".env" if exist ".env.example" (
-    echo Copiando .env.example para a pasta dist...
-    copy ".env.example" "dist\.env" > nul
+echo [2/2] Configurando ambiente local...
+:: Criar .env a partir de .env.example se .env nao existir na raiz
+if not exist ".env" if exist ".env.example" (
+    echo Criando o arquivo .env inicial na raiz...
+    copy ".env.example" ".env" > nul
 )
 
 echo.
 echo ===================================================
-echo [3/3] COMPILACAO CONCLUIDA COM SUCESSO!
+echo COMPILACAO CONCLUIDA COM SUCESSO!
 echo ===================================================
-echo O executavel foi gerado em: dist\Hisoka.exe
+echo O executavel foi gerado em: Hisoka.exe
 echo.
-echo Para ligar o Hisoka, basta executar o arquivo 'dist\Hisoka.exe'
-echo Certifique-se de configurar o arquivo 'dist\.env' se necessario.
+echo Para ligar o Hisoka, basta executar o arquivo 'Hisoka.exe' na raiz.
+echo Certifique-se de configurar o arquivo '.env' se necessario.
 echo ===================================================
 pause
+
