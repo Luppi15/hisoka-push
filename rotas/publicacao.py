@@ -27,12 +27,13 @@ def verificar_slug():
             "message": "Configurações do WordPress ausentes."
         }), 400
 
-    existe, titulo = verificar_slug_existente(slug)
+    existe, titulo, erro_verificacao = verificar_slug_existente(slug)
     
     return jsonify({
         "success": True,
         "existe": existe,
-        "titulo": titulo
+        "titulo": titulo,
+        "erro_verificacao": erro_verificacao
     })
 
 @bp_publicacao.route("/publish", methods=["POST"])
@@ -109,7 +110,12 @@ def publicar_em_lote():
             })
             continue
 
-        conteudo_rascunho = f"<!-- Rascunho rápido criado via WP Article Publisher. Cole seu HTML final aqui. -->\n<p>Este é um rascunho temporário para o artigo: <strong>{titulo}</strong>. Substitua este conteúdo no WordPress.</p>"
+        conteudo_rascunho = (
+            f'<!-- wp:paragraph -->\n'
+            f'<p>Este é um rascunho temporário para o artigo: <strong>{titulo}</strong>. '
+            f'Substitua este conteúdo no WordPress.</p>\n'
+            f'<!-- /wp:paragraph -->'
+        )
         
         sucesso = False
         post_id = None

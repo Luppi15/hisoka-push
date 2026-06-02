@@ -9,11 +9,24 @@ from rotas.categorias import bp_categorias
 # Configuração de logging profissional
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+import sys
+import os
+
+# Determinar os caminhos de templates e estáticos (compatível com PyInstaller)
+if getattr(sys, 'frozen', False):
+    # Se estiver rodando como executável compilado (.exe) pelo PyInstaller
+    diretorio_templates = os.path.join(sys._MEIPASS, 'modelos')
+    diretorio_estatico = os.path.join(sys._MEIPASS, 'estatico')
+else:
+    # Se estiver rodando em desenvolvimento (.py)
+    diretorio_templates = 'modelos'
+    diretorio_estatico = 'estatico'
+
 # Inicializar Flask com as pastas personalizadas e traduzidas
 app = Flask(
     __name__,
-    template_folder='modelos',
-    static_folder='estatico',
+    template_folder=diretorio_templates,
+    static_folder=diretorio_estatico,
     static_url_path='/estatico'
 )
 

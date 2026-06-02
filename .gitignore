@@ -13,3 +13,8 @@ ENV/
 # JSON exportado localmente (opcional)
 *.json
 !mcp_config.json
+
+# PyInstaller / Executáveis compilados
+build/
+dist/
+*.spec

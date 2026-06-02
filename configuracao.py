@@ -2,8 +2,16 @@ import os
 import logging
 from dotenv import load_dotenv
 
+import sys
+
 # Diretórios e caminhos do arquivo .env
-DIRETORIO_BASE = os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, 'frozen', False):
+    # Se estiver rodando como executável compilado (.exe) pelo PyInstaller
+    DIRETORIO_BASE = os.path.dirname(sys.executable)
+else:
+    # Se estiver rodando em desenvolvimento (.py)
+    DIRETORIO_BASE = os.path.dirname(os.path.abspath(__file__))
+
 CAMINHO_ENV = os.path.join(DIRETORIO_BASE, ".env")
 
 # Definição das variáveis globais no escopo do módulo para suporte a IDEs e LSPs

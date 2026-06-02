@@ -44,8 +44,8 @@ class TestApp(unittest.TestCase):
     from unittest.mock import patch
     @patch('rotas.publicacao.verificar_slug_existente')
     def test_verificar_slug_existente(self, mock_verificar):
-        # Configura o mock para retornar True e o título do post
-        mock_verificar.return_value = (True, "Post Existente")
+        # Configura o mock para retornar True e o título do post, erro_verificacao como False
+        mock_verificar.return_value = (True, "Post Existente", False)
         
         response = self.app.get('/verificar-slug?slug=meu-slug')
         self.assertEqual(response.status_code, 200)
@@ -55,11 +55,12 @@ class TestApp(unittest.TestCase):
         self.assertTrue(dados.get("success"))
         self.assertTrue(dados.get("existe"))
         self.assertEqual(dados.get("titulo"), "Post Existente")
+        self.assertFalse(dados.get("erro_verificacao"))
 
     @patch('rotas.publicacao.verificar_slug_existente')
     def test_verificar_slug_nao_existente(self, mock_verificar):
-        # Configura o mock para retornar False
-        mock_verificar.return_value = (False, "")
+        # Configura o mock para retornar False, erro_verificacao como False
+        mock_verificar.return_value = (False, "", False)
         
         response = self.app.get('/verificar-slug?slug=meu-slug-livre')
         self.assertEqual(response.status_code, 200)
@@ -69,6 +70,7 @@ class TestApp(unittest.TestCase):
         self.assertTrue(dados.get("success"))
         self.assertFalse(dados.get("existe"))
         self.assertEqual(dados.get("titulo"), "")
+        self.assertFalse(dados.get("erro_verificacao"))
 
     @patch('rotas.publicacao.fazer_upload_midia')
     def test_upload_media_success(self, mock_upload):

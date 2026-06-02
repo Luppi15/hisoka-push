@@ -35,8 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const botaoWizardAnterior = document.getElementById("btn-wizard-prev");
     const botaoWizardProximo = document.getElementById("btn-wizard-next");
     const botaoWizardCancelar = document.getElementById("btn-wizard-cancel");
-    const barraCopiarConfigAnterior = document.getElementById("copy-prev-config-bar");
-    const botaoCopiarConfigAnterior = document.getElementById("btn-copy-prev-config");
+    const loadingBarWizard = document.getElementById("wizard-push-loading-bar");
     const mapaProgressoWizard = document.getElementById("wizard-progress-map");
     
     // Contadores e Progresso de SEO
@@ -267,7 +266,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        if (data.existe) {
+                        if (data.erro_verificacao) {
+                            slugEmUso = false;
+                            tituloPostDuplicado = "";
+                            if (msgSlugCheck) {
+                                msgSlugCheck.style.color = "#ffb300"; // Amarelo
+                                msgSlugCheck.textContent = "⚠️ Impossível verificar slug (filtro ignorado pelo WP)";
+                            }
+                        } else if (data.existe) {
                             slugEmUso = true;
                             tituloPostDuplicado = data.titulo || "Sem Título";
                             if (msgSlugCheck) {
@@ -283,13 +289,19 @@ document.addEventListener("DOMContentLoaded", () => {
                             }
                         }
                     } else {
-                        if (msgSlugCheck) msgSlugCheck.classList.add("hidden");
                         slugEmUso = false;
+                        if (msgSlugCheck) {
+                            msgSlugCheck.style.color = "#ffb300"; // Amarelo
+                            msgSlugCheck.textContent = "⚠️ Impossível verificar slug";
+                        }
                     }
                 })
                 .catch(() => {
-                    if (msgSlugCheck) msgSlugCheck.classList.add("hidden");
                     slugEmUso = false;
+                    if (msgSlugCheck) {
+                        msgSlugCheck.style.color = "#ffb300"; // Amarelo
+                        msgSlugCheck.textContent = "⚠️ Impossível verificar slug (Erro de conexão)";
+                    }
                 });
         }, 500);
     }
@@ -596,6 +608,17 @@ document.addEventListener("DOMContentLoaded", () => {
         botaoPublicarWp.disabled = true;
         botaoExportarJson.disabled = true;
         
+        if (typeof window.wizardQueue !== "undefined" && window.wizardQueue.length > 0) {
+            const artigoAtual = window.wizardQueue[window.wizardIndex];
+            if (artigoAtual) {
+                artigoAtual.isPushing = true;
+                if (loadingBarWizard) loadingBarWizard.classList.remove("hidden");
+                if (typeof window.renderWizardProgressMap === "function") {
+                    window.renderWizardProgressMap();
+                }
+            }
+        }
+        
         const spinner = botaoPublicarWp.querySelector(".spinner");
         const btnText = botaoPublicarWp.querySelector(".btn-text");
         
@@ -675,6 +698,16 @@ document.addEventListener("DOMContentLoaded", () => {
             adicionarLogTerminal("Certifique-se de que o servidor Flask (python app.py) está em execução.", "error");
             exibirNotificacao("Erro crítico de conexão física.", "error");
         } finally {
+            if (typeof window.wizardQueue !== "undefined" && window.wizardQueue.length > 0) {
+                const artigoAtual = window.wizardQueue[window.wizardIndex];
+                if (artigoAtual) {
+                    artigoAtual.isPushing = false;
+                }
+                if (loadingBarWizard) loadingBarWizard.classList.add("hidden");
+                if (typeof window.renderWizardProgressMap === "function") {
+                    window.renderWizardProgressMap();
+                }
+            }
             botaoPublicarWp.disabled = false;
             botaoExportarJson.disabled = false;
             spinner.classList.add("hidden");
@@ -1183,11 +1216,21 @@ document.addEventListener("DOMContentLoaded", () => {
             let classes = "wizard-step-node";
             if (idx === window.wizardIndex) classes += " active";
             if (art.isPublished) classes += " published";
+            if (art.isPushing) classes += " pushing";
             noPasso.className = classes;
             
             noPasso.setAttribute("data-title", `Artigo ${idx + 1}: ${art.title}`);
             
-            if (art.isPublished) {
+            if (art.isPushing) {
+                noPasso.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon svg-spin" style="width: 0.8rem; height: 0.8rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+                        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                        <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+                        <line x1="6.34" y1="17.66" x2="9.17" y2="14.83"/><line x1="14.83" y1="9.17" x2="17.66" y2="6.34"/>
+                    </svg>
+                `;
+            } else if (art.isPublished) {
                 noPasso.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" style="width: 0.8rem; height: 0.8rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="20 6 9 17 4 12"/>
@@ -1286,13 +1329,7 @@ document.addEventListener("DOMContentLoaded", () => {
             artigo.isConfigured = true;
         }
         
-        // Exibir/Ocultar barra de cópia de configurações do artigo anterior
-        if (indice > 0 && window.wizardQueue[indice - 1] && window.wizardQueue[indice - 1].isConfigured) {
-            if (barraCopiarConfigAnterior) barraCopiarConfigAnterior.classList.remove("hidden");
-        } else {
-            if (barraCopiarConfigAnterior) barraCopiarConfigAnterior.classList.add("hidden");
-        }
-        
+
         if (entradaTitulo) entradaTitulo.dispatchEvent(new Event("input"));
         if (entradaMetaDesc) entradaMetaDesc.dispatchEvent(new Event("input"));
         renderizarLivePreview();
@@ -1315,55 +1352,12 @@ document.addEventListener("DOMContentLoaded", () => {
         adicionarLogTerminal(`Fila Ativa: Artigo ${indice + 1}/${window.wizardQueue.length} carregado no formulário.`, "info");
     };
 
-    // Duplicar configurações do artigo anterior
-    window.duplicarConfiguracaoAnterior = function() {
-        const idx = window.wizardIndex;
-        if (idx <= 0) return;
-        
-        const artigoAnterior = window.wizardQueue[idx - 1];
-        if (!artigoAnterior || !artigoAnterior.isConfigured) return;
-        
-        entradaTags.value = artigoAnterior.tags || "";
-        entradaPalavraFoco.value = artigoAnterior.focus_keyword || "";
-        entradaMetaDesc.value = artigoAnterior.meta_description || "";
-        if (entradaStatusPost) entradaStatusPost.value = artigoAnterior.post_status || "draft";
-        
-        const valorCategoria = artigoAnterior.category || "";
-        if (entradaCategorias) {
-            if (entradaCategorias.classList.contains("hidden")) {
-                if (entradaCategoriasManual) entradaCategoriasManual.value = valorCategoria;
-            } else {
-                let opcaoExiste = Array.from(entradaCategorias.options).some(o => o.value === valorCategoria);
-                if (valorCategoria && !opcaoExiste) {
-                    const opt = document.createElement("option");
-                    opt.value = valorCategoria;
-                    opt.textContent = valorCategoria;
-                    entradaCategorias.appendChild(opt);
-                }
-                entradaCategorias.value = valorCategoria;
-            }
-        }
-        
-        entradaMetaDesc.dispatchEvent(new Event("input"));
-        salvarEstadoAtualWizard();
-        
-        if (barraCopiarConfigAnterior) {
-            barraCopiarConfigAnterior.classList.add("hidden");
-        }
-        
-        adicionarLogTerminal("Configurações do artigo anterior duplicadas com sucesso!", "success");
-        exibirNotificacao("Configurações copiadas!", "success");
-    };
 
-    if (botaoCopiarConfigAnterior) {
-        botaoCopiarConfigAnterior.addEventListener("click", window.duplicarConfiguracaoAnterior);
-    }
 
     window.cancelarFilaWizard = function() {
         window.wizardQueue = [];
         window.wizardIndex = 0;
         if (barraWizard) barraWizard.classList.add("hidden");
-        if (barraCopiarConfigAnterior) barraCopiarConfigAnterior.classList.add("hidden");
         
         entradaTitulo.value = "";
         entradaSlug.value = "";

@@ -1,4 +1,5 @@
 import logging
+import re
 import xmlrpc.client
 from datetime import datetime
 from requests.auth import HTTPBasicAuth
@@ -189,6 +190,119 @@ def testar_conexao_wordpress(url, usuario, senha):
     except Exception as e:
         return False, f"Falha de conexão física com o host: {str(e)}"
 
+def converter_para_gutenberg(html):
+    """
+    Converte HTML puro em blocos Gutenberg do WordPress.
+    Garante que NENHUM conteúdo fique 'solto' (sem wrapper de bloco),
+    evitando completamente o aviso de 'Converter para blocos' no editor.
+    """
+    if not html:
+        return ""
+        
+    # Se já tiver comentários de blocos Gutenberg, não processa
+    if "<!-- wp:" in html:
+        return html
+
+    # Remover comentários HTML genéricos que NÃO são blocos Gutenberg,
+    # pois o parser os trata como conteúdo "solto" / Classic Block
+    html = re.sub(r'<!--(?!\s*/?wp:).*?-->', '', html, flags=re.DOTALL)
+
+    # Mapa de tags block-level para seus wrappers Gutenberg
+    BLOCK_MAP = {
+        'p':          ('<!-- wp:paragraph -->', '<!-- /wp:paragraph -->'),
+        'h1':         ('<!-- wp:heading {"level":1} -->', '<!-- /wp:heading -->'),
+        'h2':         ('<!-- wp:heading -->', '<!-- /wp:heading -->'),
+        'h3':         ('<!-- wp:heading {"level":3} -->', '<!-- /wp:heading -->'),
+        'h4':         ('<!-- wp:heading {"level":4} -->', '<!-- /wp:heading -->'),
+        'h5':         ('<!-- wp:heading {"level":5} -->', '<!-- /wp:heading -->'),
+        'h6':         ('<!-- wp:heading {"level":6} -->', '<!-- /wp:heading -->'),
+        'ul':         ('<!-- wp:list -->', '<!-- /wp:list -->'),
+        'ol':         ('<!-- wp:list {"ordered":true} -->', '<!-- /wp:list -->'),
+        'blockquote': ('<!-- wp:quote -->', '<!-- /wp:quote -->'),
+        'table':      ('<!-- wp:table -->', '<!-- /wp:table -->'),
+        'figure':     ('<!-- wp:image -->', '<!-- /wp:image -->'),
+        'pre':        ('<!-- wp:code -->', '<!-- /wp:code -->'),
+        'hr':         (None, None),  # Self-closing
+    }
+
+    # Regex que captura TODOS os elementos block-level.
+    # Container tags (blockquote, table, figure, ul, ol, div) são tratados
+    # individualmente para evitar que tags internas (ex: <p> dentro de <blockquote>)
+    # interrompam a captura prematuramente.
+    block_pattern = re.compile(
+        r'(<blockquote(?:\s[^>]*)?>.*?</blockquote>|'
+        r'<table(?:\s[^>]*)?>.*?</table>|'
+        r'<figure(?:\s[^>]*)?>.*?</figure>|'
+        r'<ul(?:\s[^>]*)?>.*?</ul>|'
+        r'<ol(?:\s[^>]*)?>.*?</ol>|'
+        r'<div(?:\s[^>]*)?>.*?</div>|'
+        r'<pre(?:\s[^>]*)?>.*?</pre>|'
+        r'<p(?:\s[^>]*)?>.*?</p>|'
+        r'<h[1-6](?:\s[^>]*)?>.*?</h[1-6]>|'
+        r'<hr\s*/?>|'
+        r'<img\s[^>]*?/?>|'
+        r'<iframe(?:\s[^>]*)?>.*?</iframe>)',
+        flags=re.IGNORECASE | re.DOTALL
+    )
+
+    # Dividir o HTML em segmentos: [texto_solto, bloco_html, texto_solto, bloco_html, ...]
+    partes = block_pattern.split(html)
+    blocos_resultado = []
+
+    for parte in partes:
+        if not parte:
+            continue
+
+        parte_strip = parte.strip()
+        if not parte_strip:
+            continue
+
+        # Verificar se é um bloco reconhecido
+        match_tag = re.match(r'^<(\w+)[\s>]', parte_strip, re.IGNORECASE)
+
+        if match_tag:
+            tag = match_tag.group(1).lower()
+
+            # <hr> → self-closing separator
+            if tag == 'hr':
+                blocos_resultado.append('<!-- wp:separator -->\n<hr class="wp-block-separator has-alpha-channel-opacity"/>\n<!-- /wp:separator -->')
+                continue
+
+            # <img> soltas (não dentro de figure) → wp:image com figure wrapper
+            if tag == 'img':
+                blocos_resultado.append(
+                    f'<!-- wp:image -->\n<figure class="wp-block-image">{parte_strip}</figure>\n<!-- /wp:image -->'
+                )
+                continue
+
+            # <iframe> → wp:html
+            if tag == 'iframe':
+                blocos_resultado.append(f'<!-- wp:html -->\n{parte_strip}\n<!-- /wp:html -->')
+                continue
+
+            # <div> → wp:group
+            if tag == 'div':
+                blocos_resultado.append(f'<!-- wp:group -->\n{parte_strip}\n<!-- /wp:group -->')
+                continue
+
+            # Tags mapeadas no BLOCK_MAP
+            if tag in BLOCK_MAP:
+                opener, closer = BLOCK_MAP[tag]
+                blocos_resultado.append(f'{opener}\n{parte_strip}\n{closer}')
+                continue
+
+        # Qualquer conteúdo que sobrou e NÃO é um bloco reconhecido
+        # → envolver como parágrafo se for texto puro, ou wp:html se contiver tags
+        if re.search(r'<[^>]+>', parte_strip):
+            # Contém HTML → Custom HTML block
+            blocos_resultado.append(f'<!-- wp:html -->\n{parte_strip}\n<!-- /wp:html -->')
+        else:
+            # Texto puro → parágrafo
+            blocos_resultado.append(f'<!-- wp:paragraph -->\n<p>{parte_strip}</p>\n<!-- /wp:paragraph -->')
+
+    # Juntar blocos com dupla quebra de linha (exigência do parser Gutenberg)
+    return '\n\n'.join(blocos_resultado)
+
 def cadastrar_post(dados):
     """
     Publica ou agenda um artigo. Tenta via XML-RPC bypass e cai na REST API.
@@ -200,6 +314,7 @@ def cadastrar_post(dados):
     titulo = dados.get("title", "").strip()
     slug = dados.get("slug", "").strip()
     conteudo = dados.get("content", "").strip()
+    conteudo = converter_para_gutenberg(conteudo)
     tags_raw = dados.get("tags", [])
     categorias_raw = dados.get("categories", [])
     meta_desc = dados.get("meta_description", "").strip()
@@ -326,10 +441,10 @@ def verificar_slug_existente(slug):
     """
     Verifica na API REST do WordPress se um determinado slug já existe.
     Busca por posts com status publish, future, draft, pending, trash.
-    Retorna (existe: bool, titulo: str)
+    Retorna (existe: bool, titulo: str, erro_verificacao: bool)
     """
     if not slug:
-        return False, ""
+        return False, "", False
         
     configuracao.carregar_configuracoes()
     auth = HTTPBasicAuth(configuracao.WP_USUARIO, configuracao.WP_SENHA_APLICATIVO)
@@ -344,17 +459,26 @@ def verificar_slug_existente(slug):
         resposta = _scraper.get(url_posts, auth=auth, headers=obter_cabecalhos_stealth(), params=params, timeout=10)
         if resposta.status_code == 200:
             posts = resposta.json()
-            if isinstance(posts, list) and len(posts) > 0:
-                post = posts[0]
-                titulo_post = post.get("title", {}).get("rendered", "Sem Título")
-                return True, titulo_post
-            return False, ""
+            if isinstance(posts, list):
+                if len(posts) == 0:
+                    return False, "", False
+                
+                # Verificar se algum dos posts retornados realmente possui o slug buscado
+                for post in posts:
+                    retornou_slug = post.get("slug", "").strip().lower()
+                    if retornou_slug == slug.strip().lower():
+                        titulo_post = post.get("title", {}).get("rendered", "Sem Título")
+                        return True, titulo_post, False
+                
+                # Se retornou posts mas nenhum bate com o slug, o servidor ignorou o filtro
+                return False, "", True
+            return False, "", True
         else:
             logging.warning(f"Erro ao verificar slug na REST API ({resposta.status_code}): {resposta.text}")
-            return False, ""
+            return False, "", True
     except Exception as e:
         logging.error(f"Erro de conexão ao verificar slug: {str(e)}")
-        return False, ""
+        return False, "", True
 
 def fazer_upload_midia(nome_arquivo, bytes_arquivo, mime_type, metadados):
     """
