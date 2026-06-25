@@ -52,11 +52,31 @@ document.addEventListener("DOMContentLoaded", () => {
     const estadoVazioLinks = document.getElementById("links-empty-state");
     const feedLinks = document.getElementById("links-feed");
     const botaoLimparLinks = document.getElementById("btn-clear-links");
-    const botaoCopiarTodosLinks = document.getElementById("btn-copy-all-links");
+    const botaoCopiarTodosWp = document.getElementById("btn-copy-all-wp");
+    const botaoCopiarTodosPosted = document.getElementById("btn-copy-all-posted");
     let artigosGeradosHistorico = [];
 
     // Estado do Verificador de Slug Duplicado
     let slugEmUso = false;
+    
+    // Helper para copiar links simulando planilha (para Notion/Google Sheets)
+    async function copiarListaLinksParaAreaTransferencia(links) {
+        const textContent = links.join("\r\n");
+        const htmlContent = "<table><tbody>" + links.map(l => `<tr><td>${l}</td></tr>`).join("") + "</tbody></table>";
+        
+        try {
+            const blobText = new Blob([textContent], { type: "text/plain" });
+            const blobHtml = new Blob([htmlContent], { type: "text/html" });
+            const data = [new ClipboardItem({
+                "text/plain": blobText,
+                "text/html": blobHtml
+            })];
+            await navigator.clipboard.write(data);
+        } catch (e) {
+            // Fallback caso a API avançada falhe
+            await navigator.clipboard.writeText(textContent);
+        }
+    }
     let tituloPostDuplicado = "";
     let temporizadorSlugCheck = null;
     const msgSlugCheck = document.getElementById("slug-check-msg");
@@ -354,7 +374,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ==========================================================================
     // 5B. GERENCIADOR DE HISTÓRICO E LINKS GERADOS
     // ==========================================================================
-    function registrarLinkGerado(titulo, postId, status) {
+    function registrarLinkGerado(titulo, postId, status, linkOriginal) {
         const wpUrlText = document.querySelector(".wp-url-text");
         let wpUrl = wpUrlText ? wpUrlText.textContent.trim() : "";
         if (!wpUrl) {
@@ -369,12 +389,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const linkEdicao = `${wpUrl}/wp-admin/post.php?post=${postId}&action=edit`;
+        
+        // Calcula a URL postada. Com as modificações no backend, o linkOriginal já virá como o permalink correto.
+        let linkPostado = linkOriginal || `${wpUrl}/?p=${postId}`;
 
         artigosGeradosHistorico.push({
             title: titulo,
             postId: postId,
             status: status, // "Publicado", "Agendado", "Rascunho"
-            editLink: linkEdicao
+            editLink: linkEdicao,
+            previewLink: linkPostado
         });
 
         renderizarLinksHistorico();
@@ -426,49 +450,67 @@ document.addEventListener("DOMContentLoaded", () => {
                         ${art.status}
                     </span>
                 </div>
-                <div class="link-card-body">
-                    <div class="link-url-wrapper" title="${art.editLink}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" style="height:0.85rem; width:0.85rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                        </svg>
-                        <a href="${art.editLink}" target="_blank" class="link-url-text">${art.editLink}</a>
+                <div class="link-card-body" style="flex-direction: column; gap: 0.5rem; align-items: stretch;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <div class="link-url-wrapper" title="${art.editLink}" style="flex: 1; max-width: calc(100% - 32px);">
+                            <span style="font-size: 0.65rem; background: rgba(236, 64, 122, 0.1); color: var(--color-primary); padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-right: 0.5rem; white-space: nowrap;">WP ADMIN</span>
+                            <a href="${art.editLink}" target="_blank" class="link-url-text" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${art.editLink}</a>
+                        </div>
+                        <button class="link-copy-btn" data-link="${art.editLink}" title="Copiar Link de Edição" style="flex-shrink: 0;">
+                            <span class="copy-badge-pop">Copiado!</span>
+                            <svg class="svg-icon copy-icon" style="height: 0.95rem; width: 0.95rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                            </svg>
+                            <svg class="svg-icon check-icon hidden" style="height: 0.95rem; width: 0.95rem; color: var(--color-success);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </button>
                     </div>
-                    <button class="link-copy-btn" title="Copiar Link de Edição">
-                        <span class="copy-badge-pop">Copiado!</span>
-                        <svg class="svg-icon copy-icon" style="height: 0.95rem; width: 0.95rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                        </svg>
-                        <svg class="svg-icon check-icon hidden" style="height: 0.95rem; width: 0.95rem; color: var(--color-success);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                    </button>
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <div class="link-url-wrapper" title="${art.previewLink}" style="flex: 1; max-width: calc(100% - 32px);">
+                            <span style="font-size: 0.65rem; background: var(--color-success-bg); color: var(--color-success); padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-right: 0.5rem; white-space: nowrap;">POSTADO</span>
+                            <a href="${art.previewLink}" target="_blank" class="link-url-text" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${art.previewLink}</a>
+                        </div>
+                        <button class="link-copy-btn" data-link="${art.previewLink}" title="Copiar Link Postado" style="flex-shrink: 0;">
+                            <span class="copy-badge-pop">Copiado!</span>
+                            <svg class="svg-icon copy-icon" style="height: 0.95rem; width: 0.95rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                            </svg>
+                            <svg class="svg-icon check-icon hidden" style="height: 0.95rem; width: 0.95rem; color: var(--color-success);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             `;
 
-            const botaoCopiar = card.querySelector(".link-copy-btn");
-            const iconeCopia = botaoCopiar.querySelector(".copy-icon");
-            const iconeCheck = botaoCopiar.querySelector(".check-icon");
+            const botoesCopiar = card.querySelectorAll(".link-copy-btn");
+            botoesCopiar.forEach(botaoCopiar => {
+                const iconeCopia = botaoCopiar.querySelector(".copy-icon");
+                const iconeCheck = botaoCopiar.querySelector(".check-icon");
+                const url = botaoCopiar.getAttribute("data-link");
 
-            botaoCopiar.addEventListener("click", async () => {
-                try {
-                    await navigator.clipboard.writeText(art.editLink);
-                    
-                    botaoCopiar.classList.add("copied");
-                    iconeCopia.classList.add("hidden");
-                    iconeCheck.classList.remove("hidden");
+                botaoCopiar.addEventListener("click", async () => {
+                    try {
+                        await navigator.clipboard.writeText(url);
+                        
+                        botaoCopiar.classList.add("copied");
+                        iconeCopia.classList.add("hidden");
+                        iconeCheck.classList.remove("hidden");
 
-                    exibirNotificacao("Link de edição copiado!", "success", 2000);
+                        exibirNotificacao("Link copiado!", "success", 2000);
 
-                    setTimeout(() => {
-                        botaoCopiar.classList.remove("copied");
-                        iconeCopia.classList.remove("hidden");
-                        iconeCheck.classList.add("hidden");
-                    }, 2000);
-                } catch (err) {
-                    exibirNotificacao("Erro ao copiar o link.", "error");
-                }
+                        setTimeout(() => {
+                            botaoCopiar.classList.remove("copied");
+                            iconeCopia.classList.remove("hidden");
+                            iconeCheck.classList.add("hidden");
+                        }, 2000);
+                    } catch (err) {
+                        exibirNotificacao("Erro ao copiar o link.", "error");
+                    }
+                });
             });
 
             feedLinks.appendChild(card);
@@ -484,19 +526,35 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (botaoCopiarTodosLinks) {
-        botaoCopiarTodosLinks.addEventListener("click", () => {
+    if (botaoCopiarTodosWp) {
+        botaoCopiarTodosWp.addEventListener("click", () => {
             if (artigosGeradosHistorico.length === 0) {
                 exibirNotificacao("Nenhum link gerado para copiar!", "warning");
                 return;
             }
-            
-            // Copia apenas a URL limpa de cada um pulando uma linha (com \n)
-            const todosLinks = artigosGeradosHistorico.map(art => art.editLink).join("\n");
-            navigator.clipboard.writeText(todosLinks)
+            const todosLinksArr = artigosGeradosHistorico.map(art => art.editLink);
+            copiarListaLinksParaAreaTransferencia(todosLinksArr)
                 .then(() => {
-                    exibirNotificacao("Todos os links copiados!", "success");
-                    adicionarLogTerminal("Todos os links de edição do WP foram copiados (separados por quebra de linha).", "success");
+                    exibirNotificacao("Links Admin copiados!", "success");
+                    adicionarLogTerminal("Todos os links de edição do WP foram copiados.", "success");
+                })
+                .catch(err => {
+                    adicionarLogTerminal("Erro ao copiar links: " + err, "error");
+                });
+        });
+    }
+
+    if (botaoCopiarTodosPosted) {
+        botaoCopiarTodosPosted.addEventListener("click", () => {
+            if (artigosGeradosHistorico.length === 0) {
+                exibirNotificacao("Nenhum link gerado para copiar!", "warning");
+                return;
+            }
+            const todosLinksArr = artigosGeradosHistorico.map(art => art.previewLink);
+            copiarListaLinksParaAreaTransferencia(todosLinksArr)
+                .then(() => {
+                    exibirNotificacao("Links Postados copiados!", "success");
+                    adicionarLogTerminal("Todos os links postados foram copiados.", "success");
                 })
                 .catch(err => {
                     adicionarLogTerminal("Erro ao copiar links: " + err, "error");
@@ -543,6 +601,9 @@ document.addEventListener("DOMContentLoaded", () => {
             .filter(t => t.length > 0);
             
         const statusPost = entradaStatusPost ? entradaStatusPost.value : "draft";
+        
+        const checkboxPrever = document.getElementById("predict-link-checkbox");
+        const incluirCategoriaUrl = checkboxPrever ? checkboxPrever.checked : true;
             
         return {
             title: titulo,
@@ -553,7 +614,8 @@ document.addEventListener("DOMContentLoaded", () => {
             focus_keyword: entradaPalavraFoco.value.trim(),
             meta_description: entradaMetaDesc.value.trim(),
             schedule_datetime: entradaAgendamento.value,
-            post_status: statusPost
+            post_status: statusPost,
+            incluir_categoria_url: incluirCategoriaUrl
         };
     }
     
@@ -655,7 +717,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     adicionarLogTerminal(`Visualizar post no WordPress: <a href="${resultado.link}" target="_blank" class="console-link">${resultado.link}</a>`, "success");
                 }
 
-                registrarLinkGerado(dados.title, resultado.post_id, resultado.status);
+                registrarLinkGerado(dados.title, resultado.post_id, resultado.status, resultado.link);
                 
                 // Se o assistente de fila visual (wizard) estiver ativo
                 if (typeof wizardQueue !== "undefined" && wizardQueue.length > 0) {
@@ -1071,6 +1133,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     document.getElementById("bulk-mode-content").classList.add("hidden");
                     const mediaContent = document.getElementById("media-mode-content");
                     if (mediaContent) mediaContent.classList.add("hidden");
+                    const urlContent = document.getElementById("url-mode-content");
+                    if (urlContent) urlContent.classList.add("hidden");
                     document.getElementById(`${idAlvo}-content`).classList.remove("hidden");
                 }
             }
@@ -2113,6 +2177,134 @@ document.addEventListener("DOMContentLoaded", () => {
                 imagensCarregadas = [];
                 renderizarLotesDeMidia();
             }
+        });
+    }
+
+    // ==========================================================================
+    // EXTRAÇÃO DE URLS EM LOTE
+    // ==========================================================================
+    const btnProcessarUrls = document.getElementById("btn-processar-urls");
+    const entradaUrls = document.getElementById("url-lote-input");
+    const checkboxUrlsCategoria = document.getElementById("url-lote-predict-checkbox");
+    const tableUrlsResult = document.getElementById("table-urls-result")?.querySelector("tbody");
+    const containerResultadosUrls = document.getElementById("url-results-container");
+    const btnCopiarTodosUrls = document.getElementById("btn-copiar-todos-urls");
+
+    if (btnProcessarUrls) {
+        btnProcessarUrls.addEventListener("click", async () => {
+            const rawText = entradaUrls.value.trim();
+            if (!rawText) {
+                exibirNotificacao("Cole pelo menos um link ou ID para extrair.", "warning");
+                return;
+            }
+
+            const urlsRaw = rawText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+            if (urlsRaw.length === 0) return;
+
+            const incluirCategoria = checkboxUrlsCategoria ? checkboxUrlsCategoria.checked : true;
+
+            const spinner = btnProcessarUrls.querySelector(".spinner");
+            const btnText = btnProcessarUrls.querySelector(".btn-text");
+            
+            spinner.classList.remove("hidden");
+            btnText.classList.add("hidden");
+            btnProcessarUrls.disabled = true;
+
+            adicionarLogTerminal(`Iniciando extração em lote para ${urlsRaw.length} itens...`, "info");
+            
+            try {
+                const response = await fetch("/extract-urls", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        urls: urlsRaw,
+                        incluir_categoria_url: incluirCategoria
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.resultados) {
+                    if (containerResultadosUrls) containerResultadosUrls.classList.remove("hidden");
+                    if (tableUrlsResult) {
+                        tableUrlsResult.innerHTML = ""; // Limpa a tabela
+                        data.resultados.forEach(res => {
+                            const tr = document.createElement("tr");
+                            
+                            const tdId = document.createElement("td");
+                            tdId.innerHTML = `<strong>${res.id}</strong>`;
+                            
+                            const tdTitulo = document.createElement("td");
+                            tdTitulo.textContent = res.titulo || "Desconhecido";
+                            
+                            const tdStatus = document.createElement("td");
+                            let badgeClass = "badge-blue";
+                            if (res.status === "Publicado") badgeClass = "badge-green";
+                            if (res.status === "Erro") badgeClass = "badge-red";
+                            tdStatus.innerHTML = `<span class="badge ${badgeClass}">${res.status}</span>`;
+                            
+                            const tdLink = document.createElement("td");
+                            if (res.link_final) {
+                                tdLink.innerHTML = `<a href="${res.link_final}" target="_blank" class="link-copiavel">${res.link_final}</a>`;
+                            } else {
+                                tdLink.textContent = "-";
+                            }
+
+                            tr.appendChild(tdId);
+                            tr.appendChild(tdTitulo);
+                            tr.appendChild(tdStatus);
+                            tr.appendChild(tdLink);
+                            tableUrlsResult.appendChild(tr);
+                        });
+                    }
+                    
+                    exibirNotificacao(`Extraídos ${data.resultados.length} links!`, "success");
+                    adicionarLogTerminal("Processamento de URLs em lote concluído com sucesso.", "success");
+                } else {
+                    exibirNotificacao(data.message || "Erro na extração.", "error");
+                    adicionarLogTerminal("Erro na extração: " + (data.message || "Desconhecido"), "error");
+                }
+            } catch (err) {
+                exibirNotificacao("Erro de comunicação.", "error");
+                adicionarLogTerminal("Falha ao comunicar com o servidor: " + err.message, "error");
+            } finally {
+                spinner.classList.add("hidden");
+                btnText.classList.remove("hidden");
+                btnProcessarUrls.disabled = false;
+            }
+        });
+    }
+
+    if (btnCopiarTodosUrls) {
+        btnCopiarTodosUrls.addEventListener("click", () => {
+            if (!tableUrlsResult) return;
+            // Pegar todas as linhas para manter a ordem exata do que foi processado
+            const linhas = Array.from(tableUrlsResult.querySelectorAll("tr"));
+            if (linhas.length === 0) {
+                exibirNotificacao("Nenhum link para copiar.", "warning");
+                return;
+            }
+            
+            const links = linhas.map(tr => {
+                const a = tr.querySelector(".link-copiavel");
+                return a ? a.href : "Erro/Não Encontrado";
+            });
+            
+            // Copiar na ordem exata (que agora é garantida pelo backend)
+            const linksParaCopiar = [...links];
+            
+            copiarListaLinksParaAreaTransferencia(linksParaCopiar).then(() => {
+                const iconBase = btnCopiarTodosUrls.innerHTML;
+                btnCopiarTodosUrls.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg> Copiados!
+                `;
+                exibirNotificacao(`${linksParaCopiar.length} linhas copiadas!`, "success");
+                setTimeout(() => {
+                    btnCopiarTodosUrls.innerHTML = iconBase;
+                }, 2000);
+            });
         });
     }
 });

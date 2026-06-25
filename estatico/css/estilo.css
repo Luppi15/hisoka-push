@@ -2021,6 +2021,66 @@ textarea {
     transform: translateX(18px);
 }
 
+/* ==========================================================================
+   TABLE PREMIUM STYLING
+   ========================================================================== */
+.table-responsive {
+    overflow-x: auto;
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+}
 
+.table-premium {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: left;
+    background-color: var(--bg-card);
+}
 
+.table-premium thead {
+    background-color: var(--bg-input);
+    border-bottom: 2px solid var(--color-border);
+}
 
+.table-premium th {
+    padding: 0.8rem 1rem;
+    color: var(--text-label);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+.table-premium td {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--text-main);
+    vertical-align: middle;
+}
+
+.table-premium tbody tr {
+    transition: var(--transition-smooth);
+}
+
+.table-premium tbody tr:hover {
+    background-color: var(--bg-card-hover);
+}
+
+.table-premium tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.link-copiavel {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition-smooth);
+    word-break: break-all;
+}
+
+.link-copiavel:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+}

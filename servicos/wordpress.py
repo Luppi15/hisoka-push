@@ -310,6 +310,48 @@ def converter_para_gutenberg(html):
 
     return '\n\n'.join(blocos_resultado)
 
+def prever_link_final(wp_url, titulo, slug_final, categorias_raw, incluir_categoria_url=True):
+    try:
+        import re
+        import unicodedata
+        
+        def slugify(text):
+            text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
+            text = text.lower()
+            text = re.sub(r'[^a-z0-9\-]', '-', text)
+            return re.sub(r'\-+', '-', text).strip('-')
+
+        if not slug_final:
+            slug_final = slugify(titulo)
+            
+        if incluir_categoria_url and categorias_raw:
+            primeira_cat = ""
+            if isinstance(categorias_raw, list):
+                primeira_cat = str(categorias_raw[0])
+            else:
+                primeira_cat = str(categorias_raw).split(",")[0].strip()
+            
+            minha_cat_slug = slugify(primeira_cat)
+            if minha_cat_slug:
+                return f"{wp_url.rstrip('/')}/{minha_cat_slug}/{slug_final}/"
+        
+        return f"{wp_url.rstrip('/')}/{slug_final}/"
+    except Exception as e:
+        logging.warning(f"Erro ao prever permalink: {str(e)}")
+        pass
+        
+    # Fallback default
+    import re
+    import unicodedata
+    def fallback_slugify(text):
+        text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
+        text = text.lower()
+        text = re.sub(r'[^a-z0-9\-]', '-', text)
+        return re.sub(r'\-+', '-', text).strip('-')
+    
+    slug_fallback = slug_final if slug_final else fallback_slugify(titulo)
+    return f"{wp_url.rstrip('/')}/{slug_fallback}/"
+
 def cadastrar_post(dados):
     """
     Publica ou agenda um artigo. Tenta via XML-RPC bypass e cai na REST API.
@@ -328,6 +370,7 @@ def cadastrar_post(dados):
     palavra_chave = dados.get("focus_keyword", "").strip()
     data_agendamento = dados.get("schedule_datetime", "").strip()
     status_escolhido = dados.get("post_status", "draft")
+    incluir_categoria_url = dados.get("incluir_categoria_url", True)
 
     if not titulo:
         return False, "Título é um campo obrigatório.", None, None, None
@@ -379,6 +422,13 @@ def cadastrar_post(dados):
         post_id = servidor.wp.newPost(0, configuracao.WP_USUARIO, configuracao.WP_SENHA_APLICATIVO, dados_post)
         post_criado = servidor.wp.getPost(0, configuracao.WP_USUARIO, configuracao.WP_SENHA_APLICATIVO, post_id)
         link_post = post_criado.get('link', f"{configuracao.WP_URL}/?p={post_id}")
+        slug_gerado = post_criado.get('post_name')
+        
+        # Se for draft e o WP retornar apenas ?p=id
+        if status == "draft" or "?p=" in link_post:
+            link_previsto = prever_link_final(configuracao.WP_URL, titulo, slug_gerado or slug, categorias_raw, incluir_categoria_url)
+            if link_previsto:
+                link_post = link_previsto
         
         logging.info(f"Artigo publicado via XML-RPC com sucesso! ID: {post_id}")
         status_pt = "Agendado" if status == "future" else ("Rascunho" if status == "draft" else "Publicado")
@@ -436,7 +486,16 @@ def cadastrar_post(dados):
         if resposta.status_code in [200, 201]:
             dados_retorno = resposta.json()
             status_pt = "Agendado" if status == "future" else ("Rascunho" if status == "draft" else "Publicado")
-            return True, f"Artigo '{titulo}' cadastrado com sucesso (REST API)!", dados_retorno.get("id"), status_pt, dados_retorno.get("link")
+            
+            link_final = dados_retorno.get("link")
+            slug_gerado = dados_retorno.get("slug")
+            
+            if status == "draft" or (link_final and "?p=" in link_final):
+                link_previsto = prever_link_final(configuracao.WP_URL, titulo, slug_gerado or slug, categorias_raw, incluir_categoria_url)
+                if link_previsto:
+                    link_final = link_previsto
+                    
+            return True, f"Artigo '{titulo}' cadastrado com sucesso (REST API)!", dados_retorno.get("id"), status_pt, link_final
         else:
             dados_erro = resposta.json() if 'application/json' in resposta.headers.get('content-type', '').lower() else {}
             msg_erro = dados_erro.get("message", resposta.text)
@@ -546,3 +605,79 @@ def fazer_upload_midia(nome_arquivo, bytes_arquivo, mime_type, metadados):
         logging.error(f"Erro de conexão no upload da imagem: {str(e)}")
         return False, f"Falha de conexão com a REST API do WordPress: {str(e)}", None, None
 
+def consultar_posts_em_lote(ids: list, incluir_categoria_url=True):
+    """
+    Recebe uma lista de IDs de posts e retorna um resumo com Status, Titulo e URL Limpa.
+    """
+    if not ids:
+        return []
+        
+    configuracao.carregar_configuracoes()
+    auth = HTTPBasicAuth(configuracao.WP_USUARIO, configuracao.WP_SENHA_APLICATIVO)
+    url_posts = f"{configuracao.WP_URL.rstrip('/')}/wp-json/wp/v2/posts"
+    
+    resultados = []
+    
+    # Processar em lotes pequenos
+    ids_str = ",".join(ids)
+    
+    params = {
+        "include": ids_str,
+        "status": "any",
+        "per_page": 100,
+        "_embed": 1
+    }
+    
+    try:
+        resposta = _scraper.get(url_posts, auth=auth, headers=obter_cabecalhos_stealth(), params=params, timeout=30)
+        
+        resultados_dict = {}
+        
+        if resposta.status_code == 200:
+            posts = resposta.json()
+            for post in posts:
+                post_id = str(post.get("id"))
+                titulo = post.get("title", {}).get("rendered", "")
+                status_raw = post.get("status", "draft")
+                link_bruto = post.get("link", "")
+                slug = post.get("slug", "")
+                
+                status_pt = "Publicado" if status_raw == "publish" else ("Rascunho" if status_raw == "draft" else ("Agendado" if status_raw == "future" else status_raw.capitalize()))
+                
+                link_final = link_bruto
+                
+                if status_raw == "draft" or "?p=" in link_final:
+                    cat_slug_ex = ""
+                    if "_embedded" in post and "wp:term" in post["_embedded"]:
+                        termos = post["_embedded"]["wp:term"]
+                        if termos and len(termos) > 0 and len(termos[0]) > 0:
+                            cat_slug_ex = termos[0][0].get("slug", "")
+                            
+                    link_previsto = prever_link_final(configuracao.WP_URL, titulo, slug, cat_slug_ex, incluir_categoria_url)
+                    if link_previsto:
+                        link_final = link_previsto
+                
+                resultados_dict[post_id] = {
+                    "id": post_id,
+                    "titulo": titulo,
+                    "status": status_pt,
+                    "link_final": link_final
+                }
+                
+        # Montar a lista final exatamente na mesma ordem dos IDs requisitados
+        for idx in ids:
+            idx_str = str(idx)
+            if idx_str in resultados_dict:
+                resultados.append(resultados_dict[idx_str])
+            else:
+                resultados.append({
+                    "id": idx,
+                    "titulo": "Artigo não encontrado ou sem permissão",
+                    "status": "Erro",
+                    "link_final": ""
+                })
+                
+    except Exception as e:
+        logging.error(f"Erro ao consultar lote de posts: {str(e)}")
+        
+    return resultados

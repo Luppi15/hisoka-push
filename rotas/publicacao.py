@@ -7,7 +7,7 @@ from flask import Blueprint, request, jsonify
 from requests.auth import HTTPBasicAuth
 import requests
 import configuracao
-from servicos.wordpress import cadastrar_post, verificar_slug_existente, fazer_upload_midia
+from servicos.wordpress import cadastrar_post, verificar_slug_existente, fazer_upload_midia, consultar_posts_em_lote
 
 bp_publicacao = Blueprint('publicacao', __name__)
 
@@ -34,6 +34,64 @@ def verificar_slug():
         "existe": existe,
         "titulo": titulo,
         "erro_verificacao": erro_verificacao
+    })
+
+@bp_publicacao.route("/extract-urls", methods=["POST"])
+def extrair_urls_em_lote():
+    """
+    Recebe uma lista de URLs brutas ou IDs e retorna os metadados (Título, Status, Link Final)
+    consultando a API REST do WordPress.
+    """
+    import re
+    configuracao.carregar_configuracoes()
+    if not configuracao.WP_URL or not configuracao.WP_USUARIO or not configuracao.WP_SENHA_APLICATIVO:
+        return jsonify({
+            "success": False,
+            "message": "Configurações do WordPress ausentes."
+        }), 400
+
+    dados = request.get_json()
+    if not dados or "urls" not in dados:
+        return jsonify({"success": False, "message": "Nenhuma URL fornecida."}), 400
+
+    urls_raw = dados["urls"]
+    incluir_categoria_url = dados.get("incluir_categoria_url", True)
+    
+    ids_encontrados = []
+    
+    # Extrai o ID de cada linha
+    for item in urls_raw:
+        item = str(item).strip()
+        if not item: continue
+        
+        # Tenta achar post=123 ou p=123
+        match = re.search(r'(?:post=|p=)(\d+)', item)
+        if match:
+            ids_encontrados.append(match.group(1))
+        else:
+            # Se for apenas números
+            if item.isdigit():
+                ids_encontrados.append(item)
+            else:
+                # Se for URL amigável final, já está postado, mas aqui não temos como extrair ID facilmente sem consultar.
+                # Como o script é focado em extrair de rascunhos / admin links, ignoramos ou retornamos erro?
+                # Vamos tentar extrair o ID numérico final caso exista ou ignorar.
+                match_id_final = re.search(r'-(\d+)/?$', item)
+                if match_id_final:
+                    ids_encontrados.append(match_id_final.group(1))
+
+    # Limpar duplicatas e vazios mantendo a ordem original
+    ids_validos = [i for i in ids_encontrados if i]
+    ids_encontrados = list(dict.fromkeys(ids_validos))
+    
+    if not ids_encontrados:
+        return jsonify({"success": False, "message": "Nenhum ID de post válido encontrado nas URLs."}), 400
+
+    resultados = consultar_posts_em_lote(ids_encontrados, incluir_categoria_url)
+    
+    return jsonify({
+        "success": True,
+        "resultados": resultados
     })
 
 @bp_publicacao.route("/publish", methods=["POST"])
